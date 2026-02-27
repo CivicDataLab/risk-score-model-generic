@@ -5,7 +5,6 @@ import os
 import warnings
 import matplotlib.pyplot as plt
 import seaborn as sns
-from config import hazard_config as cfg
 
 warnings.filterwarnings("ignore")
 
@@ -27,32 +26,27 @@ def calculate_hazard_scores(df, hazard_vars):
         transformed_data[var] = (transformed_data[var] - transformed_data[var].mean()) / transformed_data[var].std()
     
     # Calculate composite score
-    df[cfg.HAZARD_FLOAT_COLUMN] = transformed_data[hazard_vars].mean(axis=1)
+    df['flood-hazard-float'] = transformed_data[hazard_vars].mean(axis=1)
     
     # Apply final classification
     thresholds = [
-    df[cfg.HAZARD_FLOAT_COLUMN].quantile(q)
-    for q in cfg.QUANTILE_THRESHOLDS
+        df['flood-hazard-float'].quantile(0.35),
+        df['flood-hazard-float'].quantile(0.60),
+        df['flood-hazard-float'].quantile(0.80),
+        df['flood-hazard-float'].quantile(0.95)
     ]
     
-    conditions = [df[cfg.HAZARD_FLOAT_COLUMN] <= thresholds[0]]
+    conditions = [df['flood-hazard-float'] <= thresholds[0]]
     for i in range(len(thresholds) - 1):
         conditions.append(
-            (df[cfg.HAZARD_FLOAT_COLUMN] > thresholds[i]) & 
-            (df[cfg.HAZARD_FLOAT_COLUMN] <= thresholds[i + 1])
+            (df['flood-hazard-float'] > thresholds[i]) & 
+            (df['flood-hazard-float'] <= thresholds[i + 1])
         )
-    conditions.append(df[cfg.HAZARD_FLOAT_COLUMN] > thresholds[-1])
+    conditions.append(df['flood-hazard-float'] > thresholds[-1])
     
-    df[cfg.HAZARD_CLASS_COLUMN] = np.select(conditions, cfg.HAZARD_CLASSES, default=1)
+    df['flood-hazard'] = np.select(conditions, [1, 2, 3, 4, 5], default=1)
     
-    return df[
-    [
-        cfg.TIME_COLUMN,
-        cfg.OBJECT_ID_COLUMN,
-        cfg.HAZARD_CLASS_COLUMN,
-        cfg.HAZARD_FLOAT_COLUMN
-    ]
-]
+    return df[['timeperiod', 'object_id', 'flood-hazard', 'flood-hazard-float']]
 
 def plot_hazard_distribution(df, output_path=None):
     """
@@ -65,7 +59,7 @@ def plot_hazard_distribution(df, output_path=None):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
     # Bar plot
-    sns.countplot(data=df, x=cfg.HAZARD_CLASS_COLUMN, ax=ax1, color='steelblue')
+    sns.countplot(data=df, x='flood-hazard', ax=ax1, color='steelblue')
     ax1.set_title('Distribution of Flood Hazard Classes', pad=15)
     ax1.set_xlabel('Hazard Class')
     ax1.set_ylabel('Count')
@@ -77,7 +71,7 @@ def plot_hazard_distribution(df, output_path=None):
                     ha='center', va='bottom', fontsize=10)
     
     # Box plot
-    sns.boxplot(data=df, x=cfg.HAZARD_CLASS_COLUMN, y=cfg.HAZARD_FLOAT_COLUMN, ax=ax2, color='lightblue')
+    sns.boxplot(data=df, x='flood-hazard', y='flood-hazard-float', ax=ax2, color='lightblue')
     ax2.set_title('Distribution of Float Values by Hazard Class', pad=15)
     ax2.set_xlabel('Hazard Class')
     ax2.set_ylabel('Standardized Hazard Score')
@@ -100,7 +94,7 @@ def validate_hazard_distribution(df):
     Returns:
         bool: True if all validation checks pass
     """
-    dist = df[cfg.HAZARD_CLASS_COLUMN].value_counts().sort_index()
+    dist = df['flood-hazard'].value_counts().sort_index()
     total = len(df)
     
     print("\nHazard Distribution Validation:")
@@ -113,9 +107,9 @@ def validate_hazard_distribution(df):
     
     checks = {
         "All classes present": len(dist) == 5,
-        "Class range valid": df[cfg.HAZARD_CLASS_COLUMN].between(1, 5).all(),
+        "Class range valid": df['flood-hazard'].between(1, 5).all(),
         "Decreasing trend": dist.iloc[0] > dist.iloc[-1],
-        "No missing values": df[cfg.HAZARD_CLASS_COLUMN].notna().all()
+        "No missing values": df['flood-hazard'].notna().all()
     }
     
     print("\nValidation Checks:")
@@ -147,25 +141,27 @@ def print_variable_statistics(df, hazard_vars):
 
 def main():
     # Configuration
-    hazard_vars = cfg.HAZARD_VARS
+    hazard_vars = [
+        'inundation_intensity_mean_nonzero', 
+        'inundation_intensity_sum',
+        'drainage_density', 
+        'mean_rain', 
+        'max_rain'
+    ]
     
     # Read data
-    base_path = os.path.join(
-    os.getcwd(),
-    cfg.BASE_FOLDER,
-    cfg.DATA_FOLDER
-    )
-    master_variables = pd.read_csv(os.path.join(base_path, cfg.INPUT_FILE))
+    base_path = os.path.join(os.getcwd(), 'RiskScoreModel', 'data')
+    master_variables = pd.read_csv(os.path.join(base_path, 'MASTER_VARIABLES.csv'))
     
     # Print initial statistics
     print_variable_statistics(master_variables, hazard_vars)
     
     # Process each time period
     results = []
-    for month in tqdm(master_variables[cfg.TIME_COLUMN].unique()):
+    for month in tqdm(master_variables['timeperiod'].unique()):
         month_data = master_variables[
-            master_variables[cfg.TIME_COLUMN] == month
-        ][hazard_vars + [cfg.TIME_COLUMN, cfg.OBJECT_ID_COLUMN]].copy()
+            master_variables['timeperiod'] == month
+        ][hazard_vars + ['timeperiod', 'object_id']].copy()
         
         results.append(calculate_hazard_scores(month_data, hazard_vars))
     
@@ -173,7 +169,7 @@ def main():
     hazard_scores = pd.concat(results)
     master_variables = master_variables.merge(
         hazard_scores, 
-        on=[cfg.TIME_COLUMN, cfg.OBJECT_ID_COLUMN]
+        on=['timeperiod', 'object_id']
     )
     
     # Validate and visualize
@@ -185,12 +181,12 @@ def main():
     
     plot_hazard_distribution(
         master_variables,
-        os.path.join(base_path, cfg.PLOT_FILE)
+        os.path.join(base_path, 'hazard_distribution.png')
     )
     
     # Save results
     master_variables.to_csv(
-        os.path.join(base_path, cfg.OUTPUT_FILE),
+        os.path.join(base_path, 'factor_scores_l1_flood-hazard.csv'),
         index=False
     )
     print(f"\nResults saved successfully!")
