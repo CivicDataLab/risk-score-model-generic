@@ -152,7 +152,6 @@ def main():
     # Read data
     base_path = os.path.join(
     os.getcwd(),
-    cfg.BASE_FOLDER,
     cfg.DATA_FOLDER
     )
     master_variables = pd.read_csv(os.path.join(base_path, cfg.INPUT_FILE))
