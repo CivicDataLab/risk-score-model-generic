@@ -1,5 +1,9 @@
 from config.base_config import *
 
+# ==============================
+# Hazard Model Configuration
+# ==============================
+
 # Hazard Variables
 HAZARD_VARS = [
     "inundation_intensity_mean_nonzero",

@@ -5,6 +5,7 @@ import os
 import warnings
 import matplotlib.pyplot as plt
 import seaborn as sns
+
 from config import hazard_config as cfg
 
 warnings.filterwarnings("ignore")

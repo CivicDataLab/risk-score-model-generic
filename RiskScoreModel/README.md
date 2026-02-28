@@ -121,6 +121,61 @@ Output -- `risk_score_final.csv`
 This is the inner mechanism of TOPSIS:
 ![alt text](docs/topsis.png)
 
+## Project Structure
+risk-score-model-generic/
+│
+└── RiskScoreModel/
+    │
+    ├── config/
+    │   ├── base_config.py
+    │   ├── exposure_config.py
+    │   ├── hazard_config.py
+    │   ├── vulnerability_config.py
+    │   ├── government_response_config.py
+    │   └── risk_score_config.py
+    │
+    ├── scripts/
+    │   ├── exposure.py
+    │   ├── hazard.py
+    │   ├── vulnerability.py
+    │   ├── government_response.py
+    │   ├── risk_score.py
+    │   └── data_models
+    │      ├── DEA.py
+    │      └── topsis.py
+    ├── data/
+    │   └── MASTER_VARIABLES.csv
+    │   └── (OUTPUT).csv 
+    │
+    ├── assets/
+    │   └── district_objectid.csv
+    │
+    └── docs/
+    
+## Running the Scripts
+1. Set Working Directory: Navigate to the 'RiskScoreModel' directory before running any scripts.
+2. Script Execution Order:
+    1. python scripts/hazard.py
+    2. python scripts/exposure.py
+    3. python scripts/vulnerability.py
+    4. python scripts/government_response.py
+    5. python scripts/risk_score.py
+
+## Required Input Files
+    1. data/MASTER_VARIABLES.csv
+    2. assets/district_objectid.csv
+    
+## Output Files
+    data/
+    │
+    ├── factor_scores_l1_flood-hazard.csv
+    ├── factor_scores_l1_exposure.csv
+    ├── factor_scores_l1_vulnerability.csv
+    ├── factor_scores_l1_government-response.csv
+    │
+    ├── risk_score.csv
+    └── risk_score_final_district.csv
+
 ## References
 1. [What is TOPSIS? - By Robert Soczewica](https://robertsoczewica.medium.com/what-is-topsis-b05c50b3cd05)
 2. [DEA Pythonic Implementation](https://github.com/wurmen/DEA/tree/master/Functions/basic_DEA_data%26code)
