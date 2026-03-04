@@ -9,8 +9,8 @@ HAZARD_VARS = [
     "inundation_intensity_mean_nonzero",
     "inundation_intensity_sum",
     "drainage_density",
-    "mean_rain",
-    "max_rain",
+    # "mean_rain",
+    # "max_rain"
 ]
 
 # Thresholds

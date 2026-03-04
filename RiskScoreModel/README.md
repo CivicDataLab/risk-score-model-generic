@@ -99,7 +99,7 @@ The model is:
 
 # 4️⃣ Government Response
 
-![Response](docs/response.jpg)
+![Response](docs/government_response.jpg)
 
 **Script:** `scripts/government_response.py`  
 **Config:** `config/govtresponse_config.py`
@@ -125,7 +125,7 @@ The model is:
 
 # Final Risk Score (TOPSIS)
 
-![TOPSIS](docs/TOPSIS_RISK.jpg)
+![TOPSIS](docs/risk_topsis.jpg)
 
 **Script:** `scripts/risk_score.py`  
 **Engine:** `scripts/data_models/topsis.py`

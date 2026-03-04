@@ -71,3 +71,4 @@ master_variables.to_csv(
     os.path.join(os.getcwd(), cfg.DATA_FOLDER, cfg.OUTPUT_FILE),
     index=False
 )
+print(f"\nResults saved successfully!")
