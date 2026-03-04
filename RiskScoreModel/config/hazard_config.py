@@ -23,10 +23,9 @@ HAZARD_CLASSES = [1, 2, 3, 4, 5]
 HAZARD_FLOAT_COLUMN = "flood-hazard-float"
 HAZARD_CLASS_COLUMN = "flood-hazard"
 
-# Output
-PLOT_FILE = "hazard_distribution.png"
-OUTPUT_FILE = "factor_scores_l1_flood-hazard.csv"
+# Standardization
+USE_LOG_TRANSFORM = True
+STANDARDIZE = True
 
-# Plot Settings
-PLOT_FIGSIZE = (15, 6)
-PLOT_DPI = 300
+# Output 
+OUTPUT_FILE = "factor_scores_l1_flood-hazard.csv"

@@ -12,8 +12,3 @@ INPUT_FILE = "MASTER_VARIABLES.csv"
 # Common Columns
 TIME_COLUMN = "timeperiod"
 OBJECT_ID_COLUMN = "object_id"
-
-# Standardization
-USE_LOG_TRANSFORM = True
-STANDARDIZE = True
-

@@ -126,25 +126,6 @@ def validate_hazard_distribution(df):
     
     return all(checks.values())
 
-def print_variable_statistics(df, hazard_vars):
-    """
-    Print summary statistics for each hazard variable.
-    
-    Args:
-        df: DataFrame containing hazard variables
-        hazard_vars: List of column names for hazard variables
-    """
-    print("\nVariable Statistics:")
-    print("-" * 40)
-    
-    for var in hazard_vars:
-        stats = df[var].describe()
-        print(f"\n{var}:")
-        print(f"  Mean: {stats['mean']:.2f}")
-        print(f"  Std: {stats['std']:.2f}")
-        print(f"  Min: {stats['min']:.2f}")
-        print(f"  Max: {stats['max']:.2f}")
-        print(f"  Skew: {df[var].skew():.2f}")
 
 def main():
     # Configuration
@@ -156,9 +137,6 @@ def main():
     cfg.DATA_FOLDER
     )
     master_variables = pd.read_csv(os.path.join(base_path, cfg.INPUT_FILE))
-    
-    # Print initial statistics
-    print_variable_statistics(master_variables, hazard_vars)
     
     # Process each time period
     results = []
@@ -175,19 +153,7 @@ def main():
         hazard_scores, 
         on=[cfg.TIME_COLUMN, cfg.OBJECT_ID_COLUMN]
     )
-    
-    # Validate and visualize
-    is_valid = validate_hazard_distribution(master_variables)
-    if is_valid:
-        print("\nHazard distribution passes all validation checks!")
-    else:
-        print("\nWarning: Some validation checks failed. Please review the distribution.")
-    
-    plot_hazard_distribution(
-        master_variables,
-        os.path.join(base_path, cfg.PLOT_FILE)
-    )
-    
+        
     # Save results
     master_variables.to_csv(
         os.path.join(base_path, cfg.OUTPUT_FILE),

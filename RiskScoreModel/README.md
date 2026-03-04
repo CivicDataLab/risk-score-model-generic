@@ -1,127 +1,152 @@
 # Risk Score Model
 
-Once the data variables are created from all data sources, these are used to calculate `Risk score` for each revenue circle.
+A configuration-driven flood risk modeling framework that computes composite **Risk Scores** for each Revenue Circle using:
 
-IDS-DRR defines `Risk` as the combination of **factors** `Flood Hazard`, `Vulnerability`, `Exposure` and `Government Response`
+- Flood Hazard  
+- Exposure  
+- Vulnerability (DEA-based)  
+- Government Response  
 
-Variables are used to model each of these `factor scores` at first. The factor scores are then used to model the comprehensive `Risk Score`.
+The final composite score is calculated using **TOPSIS**.
 
-## Calculation of Factor Scores
+---
 
-### Exposure
+## Overview
+
+Risk is defined as:
+
+> **Risk = f (Flood Hazard, Vulnerability, Exposure, Government Response)**
+
+Each factor is calculated independently from `MASTER_VARIABLES.csv`, and then combined using weighted multi-criteria decision analysis.
+
+The model is:
+
+- Modular  
+- Month-wise processed  
+- Fully configuration-driven  
+- Scalable  
+
+---
+
+# 1️⃣ Flood Hazard
+
+![Hazard](docs/hazard.jpg)
+
+**Script:** `scripts/hazard.py`  
+**Config:** `config/hazard_config.py`  
+
+### Method
+
+- Log transformation (`log1p`)
+- Z-score standardization
+- Composite score (mean of standardized variables)
+- Quantile-based classification
+
+**Output:** `factor_scores_l1_flood-hazard.csv`
+
+---
+
+# 2️⃣ Exposure
 
 ![Exposure](docs/exposure.jpg)
 
-1. `sum_population` and `total_hhd` variables are considered for the calculation. (add other variables as required)
-2. Use min_max scaler to scale these variables for each month.
-3. Sum the scaled variables of `sum_population` and `total_hhd`
-4. Find mean and standard deviation of the sum calculated above.
-5. Then find the `exposure` factor score using the following criteria:
+**Script:** `scripts/exposure.py`  
+**Config:** `config/exposure_config.py`  
 
-    - If sum <= mean => very low(1) 
-    - mean to mean+1std => low(2)
-    - mean+1std to mean+2std => medium(3)
-    - mean+2std to mean+3std => high(4)
-    - sum > mean+3std => very high(5)
+### Method
 
-`exposure.py` is the code that runs above steps.
+- Month-wise MinMax scaling
+- Composite score (sum of scaled variables)
+- Classification using mean–standard deviation thresholds
 
-Input -- `MASTER_VARIABLES.csv`
+| Condition | Class |
+|------------|--------|
+| sum ≤ mean | 1 |
+| mean < sum ≤ mean + 1σ | 2 |
+| mean + 1σ < sum ≤ mean + 2σ | 3 |
+| mean + 2σ < sum ≤ mean + 3σ | 4 |
+| sum > mean + 3σ | 5 |
 
-Output -- `factor_scores_l1_exposure.csv`
+**Output:** `factor_scores_l1_exposure.csv`
 
-### Flood Hazard
-![alt text](docs/hazard.jpg)
+---
 
-1. `inundation_intensity_mean_nonzero`, `inundation_intensity_sum`, `drainage_density`, `max_rain` and `mean_rain` variables are considered for the calculation.  Other variables as required can be added.
+# 3️⃣ Vulnerability (DEA-Based)
 
-2. Using the following table, calculate class for both these variables, for each revenue circle in each month.
+![Vulnerability](docs/vulnerability.jpg)
 
-- If sum <= mean => very low(1) 
-- mean to mean+1std => low(2)
-- mean+1std to mean+2std => medium(3)
-- mean+2std to mean+3std => high(4)
-- sum > mean+3std => very high(5)
+**Script:** `scripts/vulnerability.py`  
+**Config:** `config/vulnerability_config.py`  
+**DEA Engine:** `scripts/data_models/DEA.py`
 
-3. Take average of both the classes thus calculated.
-4. Then find the `exposure` factor score by rounding the average.
+### Method
 
-`hazard.py` is the code that runs above steps.
+1. Per-capita normalization using `PER_CAPITA_MAP`
+2. Month-wise MinMax scaling
+3. Reverse inputs defined in `REVERSE_INPUT_VARS`
+4. Damage weighting using `landd_score`
+5. Input-oriented CRS DEA
+6. Natural Jenks classification (5 classes)
 
-Input -- `MASTER_VARIABLES.csv`
+**Interpretation:**
 
-Output -- `factor_scores_l1_hazard.csv`
+- Higher efficiency → Lower vulnerability  
+- Lower efficiency → Higher vulnerability  
 
+**Output:** `factor_scores_l1_vulnerability.csv`
 
-### Vulnerability
-![alt text](docs/vulnerability.jpg)
+---
 
-Losses and Damages data is generally not available for disaster risk assessments. But when available, DRR literature suggests that it be used in the assessment of Vulnerability of the region [3][4]
+# 4️⃣ Government Response
 
-[Assam State Disaster Management Authority (ASMDA)](sdmassam.nic.in) has been collecting data on flood related damages through a system called FRIMS. We used this damages data along with data on socio-economic vulnerability to assess disaster vulnerability of each revenue circle in Assam. 
+![Response](docs/response.jpg)
 
-For this, we leveraged a method called Data Envelopment Analysis (DEA)
+**Script:** `scripts/government_response.py`  
+**Config:** `config/govtresponse_config.py`
 
-DEA basically takes certain input variables and output variables for each decision making unit (Revenue Circle, in our case). And then DEA calculates `Efficiency` for each decision making unit. We used this approach in the following way:
+### Method
 
-1. Variables on socio-economic vulnerability are considered as Inputs.
-2. Variables on damages are considered as Outputs.
-3. `Efficiency` is interpreted this way: If a revenue circle has high socio-economic vulnerability but has not seen disaster related damages, it would get high efficiency score by DEA model. Revenue Circles with less efficiency are interpreted as regions with high vulnerability.
-4. This efficiency is between 0-1. It is binned into 5 categories using Natural Breaks method -- From Very High Vulnerability to Very Low Vulnerability. These five categories constitute the `vulnerability` score.
+- Financial year cumulative expenditure
+- Month-wise MinMax scaling
+- Composite score (sum)
+- Mean–standard deviation classification
 
-`vulnerability.py` is the code that runs above steps.
+| Condition | Class |
+|------------|--------|
+| sum ≤ mean | 1 |
+| mean < sum ≤ mean + 1σ | 2 |
+| mean + 1σ < sum ≤ mean + 2σ | 3 |
+| mean + 2σ < sum ≤ mean + 3σ | 4 |
+| sum > mean + 3σ | 5 |
 
-Input -- `MASTER_VARIABLES.csv`
+**Output:** `factor_scores_l1_government-response.csv`
 
-Output -- `factor_scores_l1_vulnerability.csv`
+---
 
+# Final Risk Score (TOPSIS)
 
-### Government Response
-![alt text](docs/response.jpg)
+![TOPSIS](docs/TOPSIS_RISK.jpg)
 
-1. Tender variables (total sum and SDRF tenders) variables are considered for the calculation. (Other variables as required can be added)
-2. Calculate cumulative sum of money spent in each Financial Year.
-2. Use min_max scaler to scale these variables for each month.
-3. Sum all the scaled variables
-4. Find mean and standard deviation of the sum calculated above.
-5. Then find the `government-response` factor score using the following criteria:
+**Script:** `scripts/risk_score.py`  
+**Engine:** `scripts/data_models/topsis.py`
 
-    - If sum <= mean => very low(1) 
-    - mean to mean+1std => low(2)
-    - mean+1std to mean+2std => medium(3)
-    - mean+2std to mean+3std => high(4)
-    - sum > mean+3std => very high(5)
+### Weights
 
-`govtresponse.py` is the code that runs above steps.
+| Factor | Weight |
+|--------|--------|
+| Flood Hazard | 4 |
+| Vulnerability | 2 |
+| Government Response | 2 |
+| Exposure | 1 |
 
-Input -- `MASTER_VARIABLES.csv`
+**Outputs:**
 
-Output -- `factor_scores_l1_government-response.csv`
+- `risk_score.csv`
+- `risk_score_final_district.csv`
 
-## Calculation of Risk-Score using TOPSIS
+---
 
-Once the factor scores are calculated for each revenue circle, we use these factor scores to calculate the comprehensive risk-score for each revenue circle. We use TOPSIS for this.
-
-`topsis.py` is the Python module that implements TOPSIS.<br>
-`topsis_riskscore.py` is the code that uses the above module to calculate risk score.
-
-TOPSIS requires a weight to each factor. We've considered the following weights based on literature survey
-
-| Factor   | Weight |
-| -------- | ------- |
-| Flood Hazard  | 4    |
-| Vulnerability | 2     |
-| Government Response    | 2    |
-| Exposure    | 1   |
-
-Output -- `risk_score_final.csv`
-
-![alt text](docs/TOPSIS_RISK.jpg)
-
-This is the inner mechanism of TOPSIS:
-![alt text](docs/topsis.png)
-
-## Project Structure
+# Project Structure
 risk-score-model-generic/
 │
 └── RiskScoreModel/
@@ -152,7 +177,7 @@ risk-score-model-generic/
     │
     └── docs/
     
-## Running the Scripts
+# Running the Scripts
 1. Set Working Directory: Navigate to the 'RiskScoreModel' directory before running any scripts.
 2. Script Execution Order:
     1. python scripts/hazard.py
@@ -161,11 +186,11 @@ risk-score-model-generic/
     4. python scripts/government_response.py
     5. python scripts/risk_score.py
 
-## Required Input Files
+# Required Input Files
     1. data/MASTER_VARIABLES.csv
     2. assets/district_objectid.csv
     
-## Output Files
+# Output Files
     data/
     │
     ├── factor_scores_l1_flood-hazard.csv
@@ -176,7 +201,7 @@ risk-score-model-generic/
     ├── risk_score.csv
     └── risk_score_final_district.csv
 
-## References
+# References
 1. [What is TOPSIS? - By Robert Soczewica](https://robertsoczewica.medium.com/what-is-topsis-b05c50b3cd05)
 2. [DEA Pythonic Implementation](https://github.com/wurmen/DEA/tree/master/Functions/basic_DEA_data%26code)
 3. [Aqueduct 4.0: Updated decision-relevant global water risk indicators](https://www.wri.org/research/aqueduct-40-updated-decision-relevant-global-water-risk-indicators)
