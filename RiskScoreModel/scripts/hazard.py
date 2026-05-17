@@ -1,198 +1,151 @@
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
 import pandas as pd
 import numpy as np
-from tqdm import tqdm 
-import os
+from tqdm import tqdm
 import warnings
 import matplotlib.pyplot as plt
 import seaborn as sns
-from config import hazard_config as cfg
+from config.loader import load_config
 
 warnings.filterwarnings("ignore")
 
-def calculate_hazard_scores(df, hazard_vars):
-    """
-    Calculate hazard scores using a single classification step.
-    
-    Args:
-        df: DataFrame containing hazard variables
-        hazard_vars: List of column names for hazard variables
-        
-    Returns:
-        DataFrame with flood hazard classifications
-    """
-    # Log transform and standardize variables
-    transformed_data = pd.DataFrame()
+_RISKMODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def calculate_hazard_scores(df, cfg):
+    hazard_vars = cfg["inputs"]["variables"]
+    float_col   = cfg["output"]["float_column"]
+    class_col   = cfg["output"]["class_column"]
+
+    transformed = pd.DataFrame()
     for var in hazard_vars:
-        transformed_data[var] = np.log1p(df[var])
-        transformed_data[var] = (transformed_data[var] - transformed_data[var].mean()) / transformed_data[var].std()
-    
-    # Calculate composite score
-    df[cfg.HAZARD_FLOAT_COLUMN] = transformed_data[hazard_vars].mean(axis=1)
-    
-    # Apply final classification
-    thresholds = [
-    df[cfg.HAZARD_FLOAT_COLUMN].quantile(q)
-    for q in cfg.QUANTILE_THRESHOLDS
-    ]
-    
-    conditions = [df[cfg.HAZARD_FLOAT_COLUMN] <= thresholds[0]]
+        transformed[var] = np.log1p(df[var])
+        transformed[var] = (transformed[var] - transformed[var].mean()) / transformed[var].std()
+
+    df[float_col] = transformed[hazard_vars].mean(axis=1)
+
+    thresholds = [df[float_col].quantile(q) for q in cfg["classification"]["quantile_thresholds"]]
+
+    conditions = [df[float_col] <= thresholds[0]]
     for i in range(len(thresholds) - 1):
         conditions.append(
-            (df[cfg.HAZARD_FLOAT_COLUMN] > thresholds[i]) & 
-            (df[cfg.HAZARD_FLOAT_COLUMN] <= thresholds[i + 1])
+            (df[float_col] > thresholds[i]) & (df[float_col] <= thresholds[i + 1])
         )
-    conditions.append(df[cfg.HAZARD_FLOAT_COLUMN] > thresholds[-1])
-    
-    df[cfg.HAZARD_CLASS_COLUMN] = np.select(conditions, cfg.HAZARD_CLASSES, default=1)
-    
-    return df[
-    [
-        cfg.TIME_COLUMN,
-        cfg.OBJECT_ID_COLUMN,
-        cfg.HAZARD_CLASS_COLUMN,
-        cfg.HAZARD_FLOAT_COLUMN
-    ]
-]
+    conditions.append(df[float_col] > thresholds[-1])
 
-def plot_hazard_distribution(df, output_path=None):
-    """
-    Create visualizations of the hazard distribution.
-    
-    Args:
-        df: DataFrame containing hazard classifications
-        output_path: Optional path to save the plots
-    """
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
-    
-    # Bar plot
-    sns.countplot(data=df, x=cfg.HAZARD_CLASS_COLUMN, ax=ax1, color='steelblue')
-    ax1.set_title('Distribution of Flood Hazard Classes', pad=15)
-    ax1.set_xlabel('Hazard Class')
-    ax1.set_ylabel('Count')
-    
-    # Add count labels
+    df[class_col] = np.select(conditions, cfg["classification"]["classes"], default=1)
+
+    time_col      = cfg["columns"]["time_column"]
+    object_id_col = cfg["columns"]["object_id_column"]
+    return df[[time_col, object_id_col, class_col, float_col]]
+
+
+def plot_hazard_distribution(df, cfg, output_path=None):
+    float_col = cfg["output"]["float_column"]
+    class_col = cfg["output"]["class_column"]
+    figsize   = cfg["plot"]["figsize"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    sns.countplot(data=df, x=class_col, ax=ax1, color="steelblue")
+    ax1.set_title("Distribution of Flood Hazard Classes", pad=15)
+    ax1.set_xlabel("Hazard Class")
+    ax1.set_ylabel("Count")
     for p in ax1.patches:
-        ax1.annotate(f'{int(p.get_height()):,}', 
-                    (p.get_x() + p.get_width()/2., p.get_height()),
-                    ha='center', va='bottom', fontsize=10)
-    
-    # Box plot
-    sns.boxplot(data=df, x=cfg.HAZARD_CLASS_COLUMN, y=cfg.HAZARD_FLOAT_COLUMN, ax=ax2, color='lightblue')
-    ax2.set_title('Distribution of Float Values by Hazard Class', pad=15)
-    ax2.set_xlabel('Hazard Class')
-    ax2.set_ylabel('Standardized Hazard Score')
-    
+        ax1.annotate(
+            f"{int(p.get_height()):,}",
+            (p.get_x() + p.get_width() / 2.0, p.get_height()),
+            ha="center", va="bottom", fontsize=10,
+        )
+
+    sns.boxplot(data=df, x=class_col, y=float_col, ax=ax2, color="lightblue")
+    ax2.set_title("Distribution of Float Values by Hazard Class", pad=15)
+    ax2.set_xlabel("Hazard Class")
+    ax2.set_ylabel("Standardized Hazard Score")
+
     plt.tight_layout()
-    
     if output_path:
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.savefig(output_path, dpi=cfg["plot"]["dpi"], bbox_inches="tight")
         print(f"\nPlot saved to: {output_path}")
-    
     plt.show()
 
-def validate_hazard_distribution(df):
-    """
-    Validate the hazard distribution and print statistics.
-    
-    Args:
-        df: DataFrame containing hazard classifications
-        
-    Returns:
-        bool: True if all validation checks pass
-    """
-    dist = df[cfg.HAZARD_CLASS_COLUMN].value_counts().sort_index()
+
+def validate_hazard_distribution(df, cfg):
+    class_col = cfg["output"]["class_column"]
+    dist  = df[class_col].value_counts().sort_index()
     total = len(df)
-    
+
     print("\nHazard Distribution Validation:")
     print("-" * 40)
-    
     for class_num in range(1, 6):
         count = dist.get(class_num, 0)
-        percentage = (count / total) * 100
-        print(f"Class {class_num}: {count:,} ({percentage:.1f}%)")
-    
+        print(f"Class {class_num}: {count:,} ({count / total * 100:.1f}%)")
+
     checks = {
-        "All classes present": len(dist) == 5,
-        "Class range valid": df[cfg.HAZARD_CLASS_COLUMN].between(1, 5).all(),
-        "Decreasing trend": dist.iloc[0] > dist.iloc[-1],
-        "No missing values": df[cfg.HAZARD_CLASS_COLUMN].notna().all()
+        "All classes present":  len(dist) == 5,
+        "Class range valid":    df[class_col].between(1, 5).all(),
+        "Decreasing trend":     dist.iloc[0] > dist.iloc[-1],
+        "No missing values":    df[class_col].notna().all(),
     }
-    
+
     print("\nValidation Checks:")
     print("-" * 40)
     for check, result in checks.items():
         print(f"{check}: {'✓' if result else '✗'}")
-    
+
     return all(checks.values())
 
+
 def print_variable_statistics(df, hazard_vars):
-    """
-    Print summary statistics for each hazard variable.
-    
-    Args:
-        df: DataFrame containing hazard variables
-        hazard_vars: List of column names for hazard variables
-    """
     print("\nVariable Statistics:")
     print("-" * 40)
-    
     for var in hazard_vars:
         stats = df[var].describe()
         print(f"\n{var}:")
-        print(f"  Mean: {stats['mean']:.2f}")
-        print(f"  Std: {stats['std']:.2f}")
-        print(f"  Min: {stats['min']:.2f}")
-        print(f"  Max: {stats['max']:.2f}")
+        print(f"  Mean: {stats['mean']:.2f}  Std: {stats['std']:.2f}")
+        print(f"  Min:  {stats['min']:.2f}  Max: {stats['max']:.2f}")
         print(f"  Skew: {df[var].skew():.2f}")
 
+
 def main():
-    # Configuration
-    hazard_vars = cfg.HAZARD_VARS
-    
-    # Read data
-    base_path = os.path.join(
-    os.getcwd(),
-    cfg.DATA_FOLDER
-    )
-    master_variables = pd.read_csv(os.path.join(base_path, cfg.INPUT_FILE))
-    
-    # Print initial statistics
+    cfg = load_config("hazard_config")
+
+    hazard_vars   = cfg["inputs"]["variables"]
+    time_col      = cfg["columns"]["time_column"]
+    object_id_col = cfg["columns"]["object_id_column"]
+    data_path     = os.path.join(_RISKMODEL_DIR, cfg["paths"]["data_folder"])
+
+    master_variables = pd.read_csv(os.path.join(data_path, cfg["paths"]["input_file"]))
+
     print_variable_statistics(master_variables, hazard_vars)
-    
-    # Process each time period
+
     results = []
-    for month in tqdm(master_variables[cfg.TIME_COLUMN].unique()):
+    for month in tqdm(master_variables[time_col].unique()):
         month_data = master_variables[
-            master_variables[cfg.TIME_COLUMN] == month
-        ][hazard_vars + [cfg.TIME_COLUMN, cfg.OBJECT_ID_COLUMN]].copy()
-        
-        results.append(calculate_hazard_scores(month_data, hazard_vars))
-    
-    # Combine and merge results
-    hazard_scores = pd.concat(results)
-    master_variables = master_variables.merge(
-        hazard_scores, 
-        on=[cfg.TIME_COLUMN, cfg.OBJECT_ID_COLUMN]
-    )
-    
-    # Validate and visualize
-    is_valid = validate_hazard_distribution(master_variables)
+            master_variables[time_col] == month
+        ][hazard_vars + [time_col, object_id_col]].copy()
+        results.append(calculate_hazard_scores(month_data, cfg))
+
+    hazard_scores    = pd.concat(results)
+    master_variables = master_variables.merge(hazard_scores, on=[time_col, object_id_col])
+
+    is_valid = validate_hazard_distribution(master_variables, cfg)
     if is_valid:
         print("\nHazard distribution passes all validation checks!")
     else:
         print("\nWarning: Some validation checks failed. Please review the distribution.")
-    
+
     plot_hazard_distribution(
-        master_variables,
-        os.path.join(base_path, cfg.PLOT_FILE)
+        master_variables, cfg,
+        os.path.join(data_path, cfg["output"]["plot_file"]),
     )
-    
-    # Save results
-    master_variables.to_csv(
-        os.path.join(base_path, cfg.OUTPUT_FILE),
-        index=False
-    )
-    print(f"\nResults saved successfully!")
+
+    master_variables.to_csv(os.path.join(data_path, cfg["output"]["file"]), index=False)
+    print("\nResults saved successfully!")
+
 
 if __name__ == "__main__":
     main()

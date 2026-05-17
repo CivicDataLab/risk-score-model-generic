@@ -123,55 +123,71 @@ Maps district names to the platform's geographic IDs. Required by the TOPSIS scr
 
 ## Step 2 — Configure the Project
 
-### `RiskScoreModel/config/base_config.py`
+All configuration lives in TOML files under `RiskScoreModel/config/`. You do not need to edit any Python scripts to adapt the model — only the TOML files.
 
-Always review this first:
+### `RiskScoreModel/config/base_config.toml`
 
-| Parameter | Default | Change if... |
-|-----------|---------|-------------|
-| `INPUT_FILE` | `MASTER_VARIABLES.csv` | Your input file has a different name |
-| `TIME_COLUMN` | `timeperiod` | Your time column has a different name |
-| `OBJECT_ID_COLUMN` | `object_id` | Your geographic ID column has a different name |
+Always review this first. It sets the shared paths and column names used by every script.
 
-### `RiskScoreModel/config/hazard_config.py`
-
-| Parameter | Default | Change if... |
-|-----------|---------|-------------|
-| `HAZARD_VARS` | 5 rainfall/inundation columns | You have different or fewer hazard variables |
-| `QUANTILE_THRESHOLDS` | `[0.35, 0.60, 0.80, 0.95]` | You want different classification boundaries |
-| `HAZARD_CLASSES` | `[1, 2, 3, 4, 5]` | You want a different number of risk classes |
-
-### `RiskScoreModel/scripts/exposure.py`
-
-The exposure variable list is hardcoded near the top of the script. Update the variable names to match your available columns.
-
-### `RiskScoreModel/scripts/vulnerability.py`
-
-Two lists are hardcoded in the script: the condition input variables and the damage output variables. Update both to match your data. Also review the polarity inversion list — any variable where higher values mean better resilience (e.g. schools, road density) must be inverted so the DEA model penalises their absence.
-
-### `RiskScoreModel/scripts/govtresponse.py`
-
-Two things to configure in the script:
-
-1. **Response variables** — update the variable list to match your available expenditure columns.
-2. **Financial year logic** — the default uses the Indian fiscal calendar (April–March). If your geography uses a different fiscal year, update the `get_financial_year()` function accordingly.
-
-### `RiskScoreModel/scripts/topis_riskscore_district.py`
-
-| Element | Default | Change if... |
+| Setting | Default | Change if... |
 |---------|---------|-------------|
-| Factor weights (`fldhzd_w`, `exp_w`, `vul_w`, `resp_w`) | 4, 1, 2, 2 | You want to re-weight factors based on local context or policy |
-| `bins=5` in `pd.cut` | 5 risk classes | You want a different number of output classes |
-| `indicators` list | 50+ India-specific columns | Your data does not include all default columns — remove those that are absent |
-| `aggregation_rules` dict | sum / mean / max / min per column | You have added or removed indicator columns |
-| Column rename map | India-specific names | Your variables use different naming conventions |
-| `rounding_rules` dict | Per-column precision | You want different output precision |
+| `paths.data_folder` | `data` | Your data folder is named differently |
+| `paths.input_file` | `MASTER_VARIABLES.csv` | Your input file has a different name |
+| `columns.time_column` | `timeperiod` | Your time column has a different name |
+| `columns.object_id_column` | `object_id` | Your geographic ID column is named differently |
+
+### `RiskScoreModel/config/hazard_config.toml`
+
+| Setting | Default | Change if... |
+|---------|---------|-------------|
+| `inputs.variables` | 5 rainfall/inundation columns | You have different or fewer hazard variables |
+| `classification.quantile_thresholds` | `[0.35, 0.60, 0.80, 0.95]` | You want different classification boundaries |
+| `classification.classes` | `[1, 2, 3, 4, 5]` | You want a different number of risk classes |
+
+### `RiskScoreModel/config/exposure_config.toml`
+
+| Setting | Default | Change if... |
+|---------|---------|-------------|
+| `inputs.variables` | `sum_population`, `total_hhd` | You have different population/household columns (min: 1) |
+| `classification.classes` | `[1, 2, 3, 4, 5]` | You want different class labels |
+
+### `RiskScoreModel/config/vulnerability_config.toml`
+
+| Setting | Default | Change if... |
+|---------|---------|-------------|
+| `inputs.condition_vars` | 11 infrastructure/demographic columns | You have different structural condition variables |
+| `inputs.damage_vars` | 6 flood damage columns | You have different damage variables (or none — see note below) |
+| `inputs.inverted_inputs` | 6 resilience variables | You change condition_vars — update which variables are inverted |
+| `inputs.neg_inputs` | 3 negative-polarity variables | You change condition_vars |
+| `normalisation.per_capita` | 4 variables ÷ population | Update denominators to match your data |
+| `normalisation.per_area` | 11 variables ÷ area | Update denominators to match your data |
+| `classification.n_classes` | `5` | You want a different number of vulnerability classes |
+| `classification.damage_threshold` | `0.0001` | You want to change the damage significance threshold |
+
+> **If damage data is not available:** The DEA method requires observed damage data. Without it, consider replacing the DEA with a simpler weighted index over `inputs.condition_vars` only.
+
+### `RiskScoreModel/config/govtresponse_config.toml`
+
+| Setting | Default | Change if... |
+|---------|---------|-------------|
+| `inputs.variables` | 3 tender/SDRF columns | You have different expenditure columns (min: 1) |
+| `fiscal_year.start_month` | `4` (April) | Your geography uses a different fiscal year calendar |
+
+### `RiskScoreModel/config/topsis_config.toml`
+
+| Setting | Default | Change if... |
+|---------|---------|-------------|
+| `weights.*` | hazard=4, exposure=1, vulnerability=2, response=2 | You want to re-weight factors based on local context or policy |
+| `classification.n_bins` | `5` | You want a different number of output risk classes |
+| `paths.district_lookup_file` | `assets/district_objectid.csv` | You replace the district ID lookup |
+| `[indicators]` | 70+ India-specific columns with aggregation rules | Remove rows for columns absent in your data |
+| `[rounding]` | Per-column decimal precision | You want different output rounding |
 
 ---
 
 ## Step 3 — Run the Scripts
 
-The four factor scripts are independent. Run them in any order:
+All scripts should be run from the repository root. The four factor scripts are independent and can run in any order (or in parallel):
 
 ```bash
 python RiskScoreModel/scripts/hazard.py

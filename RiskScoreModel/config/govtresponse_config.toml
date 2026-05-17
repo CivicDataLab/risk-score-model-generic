@@ -1,0 +1,28 @@
+# Government Response score configuration.
+# See docs/score_government_response.md for methodology detail and alternative data sources.
+#
+# Score is inversely coded: high spending = class 1 (strongest response).
+
+[inputs]
+# Monetary expenditure/procurement columns. Minimum 1 required.
+# Financial-year cumulative sums are computed automatically before scoring.
+variables = [
+    "total_tender_awarded_value",
+    "SDRF_sanctions_awarded_value",
+    "SDRF_tenders_awarded_value",
+]
+
+[fiscal_year]
+# Month number on which the fiscal year starts (1 = January, 4 = April, 7 = July …).
+# Default is 4 (April–March, Indian fiscal calendar).
+# Update this if the target geography uses a different fiscal year convention.
+start_month = 4
+
+[classification]
+# Inverted labels: low spending maps to class 5 (weakest), high spending to class 1 (strongest).
+classes = [5, 4, 3, 2, 1]
+
+[output]
+class_column          = "government-response"
+financial_year_column = "financial_year"
+file                  = "factor_scores_l1_government-response.csv"

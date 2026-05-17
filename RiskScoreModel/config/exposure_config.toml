@@ -1,0 +1,18 @@
+# Exposure score configuration.
+# See docs/score_exposure.md for methodology detail and alternative data sources.
+
+[inputs]
+# Population/household columns to use. Minimum 1 required.
+# MinMax scaling is applied per month, so absolute units do not matter.
+variables = [
+    "sum_population",
+    "total_hhd",
+]
+
+[classification]
+# Class labels assigned from lowest to highest exposure.
+classes = [1, 2, 3, 4, 5]
+
+[output]
+class_column = "exposure"
+file         = "factor_scores_l1_exposure.csv"

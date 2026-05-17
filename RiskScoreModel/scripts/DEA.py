@@ -1,487 +1,534 @@
 # -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
-# https://github.com/wurmen/DEA/tree/master/Functions/basic_DEA_data%26code
-from gurobipy import*
-from itertools import islice
+# SPDX-License-Identifier: MIT
+#
+# Data Envelopment Analysis (DEA) routines using open-source LP solvers.
+#
+# Refactored for compatibility with the Digital Public Goods Alliance (DPGA)
+# Standard. The original implementation depended on Gurobi (proprietary,
+# commercial-licensed), which precludes the project from meeting DPG
+# Indicator 4 (Platform Independence). This module replaces that dependency
+# with PuLP and its bundled CBC solver, both OSI-approved open source.
+#
+# Original algorithmic structure adapted from:
+#   https://github.com/wurmen/DEA
+
+"""Data Envelopment Analysis (DEA) using open-source LP solvers.
+
+Public API
+----------
+csv2dict           Read DMU / input / output data from a single CSV.
+csv2dict_sep       Read input or output data from a separated CSV.
+CRS                Solve the constant-returns-to-scale DEA model.
+VRS                Solve the variable-returns-to-scale DEA model.
+
+Each solver routine returns a ``pandas.DataFrame`` with columns
+``['DMU', 'efficiency']``. For input-oriented models the efficiency lies
+in ``(0, 1]``; for output-oriented models it is reported as
+``1 / objective`` so that ``1.0`` again denotes a fully efficient unit.
+
+Intended use and limitations
+----------------------------
+This module computes DEA efficiency scores from numeric input/output
+tables. It is intended as a component of a larger risk-modelling
+pipeline and **should not** be used as the sole basis for decisions
+that affect individuals or households. DMU identifiers are expected to
+be non-personal (e.g. administrative unit codes); do not feed personal
+identifiers into this routine.
+"""
+
+from __future__ import annotations
+
 import csv
+import logging
+from itertools import islice
+from typing import Dict, List, Sequence, Tuple
+
 import pandas as pd
-# TODO reading csv file including inputs and outputs for DMUs, transfered to 'dict' types for Linear Programming Modeling in Gurobi Software(package) 
-def csv2dict(dea_data, in_range, out_range, assign=False):
-    
-    f=open(dea_data)
-    reader=csv.reader(f)
-    DMU = []
-    X,Y={},{}
-    
-    # All values in in_range should be greater than 0; otherwise, stop the function    
-    if all(value > 0 for value in in_range):
-        in_range[:]=[x-1 for x in in_range]
-    else:
-        print("Error: all values given in in_range should be greater than 0")
-        
-		# Return nothing to stop the function
-        return 
+from pulp import (
+    LpMaximize,
+    LpMinimize,
+    LpProblem,
+    LpStatus,
+    LpStatusOptimal,
+    LpVariable,
+    PULP_CBC_CMD,
+    lpSum,
+    value,
+)
 
-    # Same as the in_range
-    if all(value > 0 for value in out_range):
-        out_range[:] = [y-1 for y in out_range]
-    else:
-        print("Error: all values given in out_range should be greater than 0")
-		
-		# Return nothing to stop the function
-        return 
+logger = logging.getLogger(__name__)
 
-    for line in islice(reader,1,None):
-        
-        obs = line     
-        key=obs[0]    # Remove line breaks '/n'
-
-        DMU.append(key)  # Get DMU names
-        
-        # Create dictionaries
-        try:
-            if (assign==False): 
-                
-                # Give a range to get input and ouput data
-                X[key]= [float(v) for v in obs[(in_range[0]):(in_range[1]+1)]] # List comprehension
-                Y[key]= [float(v) for v in obs[(out_range[0]):(out_range[1]+1)]]
-                
-            elif (assign==True): 
-                
-                # Get specific lines as input and output data
-                # X and Y are input and output of DMU separately
-                X[key]= [float(v) for v in (list(obs[i] for i in in_range))] # List comprehension
-                Y[key]= [float(v) for v in (list(obs[i] for i in out_range))]
-
-        except ValueError :
-            print("which means your data include string not number")
-            
-    return DMU, X, Y
+# Type aliases for clarity
+DMUData = Dict[str, List[float]]
 
 
+# ---------------------------------------------------------------------------
+# CSV ingestion
+# ---------------------------------------------------------------------------
 
-# TODO reading csv file including inputs and outputs for DMUs if they are separated in different two files (one for inputs, another for outputs)
-# then, transfered to 'dict' types for Linear Programming Modeling in Gurobi Software(package)  
-def csv2dict_sep(dea_data, vrange=[0,0], assign=False):
-    
-#    The input and output data are separated into different files
-    f=open(dea_data)
-    reader=csv.reader(f)
-    DMU = []
-    value={}
-    
-    vrange[:]=[v-1 for v in vrange]
-    
-    for line in islice(reader,1,None):
-        obs = line 
-        obs_len = len(obs)    
-        key=obs[0]   #Get DMU names
-        DMU.append(key)
-        
-        # Create dictionaries
-        try:
-            if (assign==False):
-                value[key]= [float(v) for v in obs[1:(obs_len)]]
-            elif (assign==True):
-                # Get specific lines as input or output data
-                value[key]= [float(v) for v in (list(obs[i] for i in vrange))]
-        except IOError :
-            print("which means your data include string not number")
-            
-    return DMU, value
+def csv2dict(
+    dea_data: str,
+    in_range: Sequence[int],
+    out_range: Sequence[int],
+    assign: bool = False,
+) -> Tuple[List[str], DMUData, DMUData]:
+    """Read DMU records from a CSV containing both inputs and outputs.
 
+    The first column of each row must be the DMU identifier. Remaining
+    columns hold numeric input and output values. Column indices are
+    1-based to match the convention of the original module.
 
+    Parameters
+    ----------
+    dea_data : str
+        Path to a CSV file. The first row is treated as a header.
+    in_range : Sequence[int]
+        1-based column indices identifying input columns. When ``assign``
+        is False this is interpreted as an inclusive ``[start, end]``
+        range; when True, as an explicit list of columns.
+    out_range : Sequence[int]
+        1-based column indices for outputs, same semantics as ``in_range``.
+    assign : bool, default False
+        See ``in_range``.
 
-# TODO solve DEA_CRS models with LP technique by Gurobi Software (package) 
-def CRS(DMU, X, Y, orientation, dual):
+    Returns
+    -------
+    (dmus, x, y) : Tuple[List[str], DMUData, DMUData]
+        ``dmus`` is the ordered list of DMU names; ``x`` and ``y`` map
+        each DMU name to its input and output vectors respectively.
 
-    I=len(X[DMU[0]])
-    O=len(Y[DMU[0]])   
-    E={}# Efficiency    
-    efficiencies = []
-    DMUs = []
-    if (orientation=='input' and dual==False):
-        
-        for r in DMU:
-            try:    
-                # The decision variables                            
-                v,u={},{}
-                
-                # Initialize LP model
-                m=Model("CRS_model")
-                m.setParam('OutputFlag', 0) # Muting the optimize function
-                
-                # Add decision variables
-                for i in range(I):
-                    v[r,i]=m.addVar(vtype=GRB.CONTINUOUS,name="v_%s%d"%(r,i))
-                
-                for j in range(O):
-                    u[r,j]=m.addVar(vtype=GRB.CONTINUOUS,name="u_%s%d"%(r,j))
-                
-                m.update()
-                
-                # Add objective function 
-                m.setObjective(quicksum(u[r,j]*Y[r][j] for j in range(O)),GRB.MAXIMIZE)
-                
-                # Add constraints
-                m.addConstr(quicksum(v[r,i]*X[r][i] for i in range(I))==1)
-                for k in DMU:
-                    m.addConstr(quicksum(u[r,j]*Y[k][j] for j in range(O))-quicksum(v[r,i]*X[k][i] for i in range(I))<=0)
-                
-                # Start optimize the formulation
-                m.optimize()
-                
-                # Store the result
-                E[r]="The efficiency of DMU %s:%0.3f"%(r,m.objVal)
-                efficiencies.append(m.objVal)
-                DMUs.append(r)
-                
-            except GurobiError:
-            	print ('GurobiError reported')
-                
-            # Print result    
-            #print (E[r])
+    Raises
+    ------
+    ValueError
+        If any range index is < 1 or if a data cell cannot be parsed as
+        a float.
+    """
+    if not all(v > 0 for v in in_range):
+        raise ValueError("All values in in_range must be >= 1 (1-based).")
+    if not all(v > 0 for v in out_range):
+        raise ValueError("All values in out_range must be >= 1 (1-based).")
 
-        
-        df = pd.DataFrame([DMU,efficiencies]).T
-        df.columns = ['DMU', 'efficiency']
+    # Convert to 0-based without mutating the caller's lists
+    in_idx = [v - 1 for v in in_range]
+    out_idx = [v - 1 for v in out_range]
 
-        return df
+    dmus: List[str] = []
+    x: DMUData = {}
+    y: DMUData = {}
 
-    elif (orientation=='input' and dual==True):                
-        # TODO solve dual of input-oriented CRS DEA model with LP technique by Gurobi Software (package)                     
-        for r in DMU:
-            try:        
-                
-                # The decision variables
-                theta,λ={},{}
-            
-                # Initialize LP model
-                m=Model("Dual_of_CRS_model")
-                m.setParam('OutputFlag',False)  # Muting the optimize function
-                
-                # Add decision variables
-                for k in DMU:
-                    λ[k]=m.addVar(vtype=GRB.CONTINUOUS,name="λ_%s"%k)
-                theta[r]=m.addVar(vtype=GRB.CONTINUOUS,lb=-1000,name="theta_%s"%r)    
-               
-                m.update()
-                
-                # Add objective function
-                m.setObjective(theta[r],GRB.MINIMIZE)
-                
-                # Add constraints
-                for i in range(I):
-                    m.addConstr(quicksum(λ[k]*X[k][i] for k in DMU)<= theta[r]*X[r][i])
-                for j in range(O):
-                    m.addConstr(quicksum(λ[k]*Y[k][j] for k in DMU)>= Y[r][j])
-                
-                # Start optimize the formulation 
-                m.optimize()
-                
-                # Store the result
-                E[r]="The efficiency of DMU %s:%0.3f"%(r,m.objVal)
-                
-    #            for c in m.getConstrs():
-    #                print ("The slack value of %s : %g"%(c.constrName,c.Slack))
-    #            print(m.getAttr('slack', m.getConstrs()))
-    #            print(m.getAttr('x', m.getVars()))
-            
-            except GurobiError:
-            	print ('GurobiError reported')
-            
-            # Print efficiency
-            print (E[r])        
-    elif(orientation=='output' and dual==False):        
-    # TODO solve output-oriented DEA_CRS  model with LP technique by Gurobi Software (package) 
-        for r in DMU:
-            try:    
-                # The decision variables                            
-                v,u={},{}
-                
-                # Initialize LP model
-                m=Model("CRS_model")
-                m.setParam('OutputFlag', 0) # Muting the optimize function
-                
-                # Add decision variables
-                for i in range(I):
-                    v[r,i]=m.addVar(vtype=GRB.CONTINUOUS,name="v_%s%d"%(r,i))
-                
-                for j in range(O):
-                    u[r,j]=m.addVar(vtype=GRB.CONTINUOUS,name="u_%s%d"%(r,j))
-                
-                m.update()
-                
-                # Add objective function 
-                m.setObjective(quicksum(v[r,i]*X[r][i] for i in range(I)),GRB.MINIMIZE)
-                
-                # Add constraints
-                m.addConstr(quicksum(u[r,j]*Y[r][j] for j in range(O))==1)
-                for k in DMU:
-                    m.addConstr(quicksum(v[r,i]*X[k][i] for i in range(I))-quicksum(u[r,j]*Y[k][j] for j in range(O))>=0)
-                
-                # Start optimize the formulation
-                m.optimize()
-                
-                # Store the result
-                E[r]="The efficiency of DMU %s:%0.3f"%(r,1/m.objVal)
-                
-            except GurobiError:
-            	print ('GurobiError reported')
-                
-            # Print result    
-            print (E[r])
-    elif(orientation=='output' and dual==True):  
-        # TODO solve dual of output-oriented CRS DEA model with LP technique by Gurobi Software (package)                     
-        for r in DMU:
-            try:        
-                
-                # The decision variables
-                theta, λ={}, {}
-            
-                # Initialize LP model
-                m=Model("Dual_of_CRS_model")
-                m.setParam('OutputFlag',False)  # Muting the optimize function
-                
-                # Add decision variables
-                for k in DMU:
-                    λ[k]=m.addVar(vtype=GRB.CONTINUOUS,name="λ_%s"%k)
-                theta[r]=m.addVar(vtype=GRB.CONTINUOUS,lb=-1000,name="theta_%s"%r)    
-               
-                m.update()
-                
-                # Add objective function
-                m.setObjective(theta[r],GRB.MAXIMIZE)
-                
-                # Add constraints
-                for j in range(O):
-                    m.addConstr(quicksum(λ[k]*Y[k][j] for k in DMU)>= theta[r]*Y[r][j])
-                for i in range(I):
-                    m.addConstr(quicksum(λ[k]*X[k][i] for k in DMU)<= X[r][i])
-                
-                # Start optimize the formulation 
-                m.optimize()
-                
-                # Store the result
-                E[r]="The efficiency of DMU %s:%0.3f"%(r,1/m.objVal)
-                
-#                for c in m.getConstrs():
-#                    print ("The slack value of %s : %g"%(c.constrName,c.Slack))
-#                print(m.getAttr('slack', m.getConstrs()))
-#                print(m.getAttr('x', λ))
-            
-            except GurobiError:
-            	print ('GurobiError reported')
-            
-            # Print efficiency
-            print (E[r])        
-        
-        
-# TODO solve DEA_VRS models with LP technique by Gurobi Software (package)       
-def VRS(DMU, X, Y, orientation, dual):
-    
-    I=len(X[DMU[0]])
-    O=len(Y[DMU[0]])    
-    efficiencies = []
-    DMUs = []
-    E={}  
-    u0_v={}
-    
-    if(orientation=="input" and dual==False):
-        
-        for r in DMU:
+    with open(dea_data, newline="", encoding="utf-8") as fh:
+        reader = csv.reader(fh)
+        for row in islice(reader, 1, None):
+            if not row:
+                continue
+            key = row[0].strip()
+            dmus.append(key)
             try:
-             
-                
-                # Initialize LP model
-                m=Model("VRS_model")
-                m.setParam('OutputFlag',0) # Muting the optimize function 
-                
-                # The decision variable
-                v,u,u0={},{},{}
-                
-                # Add decision variables
-                for i in range(I):
-                    v[r,i]=m.addVar(vtype=GRB.CONTINUOUS,name="v_%s%d"%(r,i))
-                
-                for j in range(O):
-                    u[r,j]=m.addVar(vtype=GRB.CONTINUOUS,name="u_%s%d"%(r,j))
-                u0[r]=m.addVar(lb=-1000,vtype=GRB.CONTINUOUS,name="u0_%s"%r)
-                
-                
-                m.update()
-                
-                # Add objective function
-                m.setObjective(quicksum(u[r,j]*Y[r][j] for j in range(O))-u0[r],GRB.MAXIMIZE)
-                
-                # Add constraints
-                m.addConstr(quicksum(v[r,i]*X[r][i] for i in range(I))==1)
-                for k in DMU:
-                    m.addConstr(quicksum(u[r,j]*Y[k][j] for j in range(O))-quicksum(v[r,i]*X[k][i] for i in range(I))-u0[r] <=0)
-                
-                m.optimize()
-                
-                # Print efficiency            
-                #E[r]="The efficiency of DMU %s:%0.3f"%(r,m.objVal)
+                if assign:
+                    x[key] = [float(row[i]) for i in in_idx]
+                    y[key] = [float(row[i]) for i in out_idx]
+                else:
+                    x[key] = [float(v) for v in row[in_idx[0]:in_idx[1] + 1]]
+                    y[key] = [float(v) for v in row[out_idx[0]:out_idx[1] + 1]]
+            except ValueError as exc:
+                raise ValueError(
+                    f"Non-numeric value in row for DMU {key!r}: {exc}"
+                ) from exc
 
-                efficiencies.append(m.objVal)
-                DMUs.append(r)
-                
-                #print (E[r])
-    #            if RTS_check==True:
-    #                u0_v[r]='%s = %0.3f'%(u0[r].varName,u0[r].X)
-    #                print(u0_v[r])
-    
-            except GurobiError:
-            	print ('GurobiError reported')
-
-        df = pd.DataFrame([DMU,efficiencies]).T
-        df.columns = ['DMU', 'efficiency']
-
-        return df
+    return dmus, x, y
 
 
-    elif(orientation=="input" and dual==True):
-        # TODO solve dual of input-oriented VRS DEA model with LP technique by Gurobi Software (package)         
-        for r in DMU:
-            try:        
-                
-                # The decision variables
-                theta, λ={}, {}
-            
-                # Initialize LP model
-                m=Model("Dual_of_CRS_model")
-                m.setParam('OutputFlag',False)  # Muting the optimize function
-                
-                # Add decision variables
-                for k in DMU:
-                    λ[k]=m.addVar(vtype=GRB.CONTINUOUS,name="λ_%s"%k)
-                theta[r]=m.addVar(vtype=GRB.CONTINUOUS,lb=-1000,name="theta_%s"%r)    
-               
-                m.update()
-                
-                # Add objective function
-                m.setObjective(theta[r],GRB.MINIMIZE)
-                
-                # Add constraints
-                for i in range(I):
-                    m.addConstr(quicksum(λ[k]*X[k][i] for k in DMU)<= theta[r]*X[r][i])
-                for j in range(O):
-                    m.addConstr(quicksum(λ[k]*Y[k][j] for k in DMU)>= Y[r][j])
-                m.addConstr(quicksum(λ[k] for k in DMU)==1,name='sum of λ')
-                
-                # Start optimize the formulation 
-                m.optimize()
-                
-                # Store the result
-                E[r]="The efficiency of DMU %s:%0.3f"%(r,m.objVal)
-                val=m.getAttr('X',λ)
-    #            for c in m.getConstrs():
-    #                print ("The slack value of %s : %g"%(c.constrName,c.Slack))
-    #            print(m.getAttr('slack', m.getConstrs()))
-    #            print(m.getAttr('x', m.getVars()))
-            
-            except GurobiError:
-            	print ('GurobiError reported')
-            
-            # Print efficiency
-            print (E[r]) 
-        
+def csv2dict_sep(
+    dea_data: str,
+    vrange: Sequence[int] = (0, 0),
+    assign: bool = False,
+) -> Tuple[List[str], DMUData]:
+    """Read DMU records from a CSV that holds either inputs or outputs.
 
-    # TODO solve output-oriented DEA_VRS model with LP technique by Gurobi Software (package)       
-    elif(orientation=="output" and dual==False):        
-        v0_v={}
-        
-        
-        for r in DMU:
+    Parameters
+    ----------
+    dea_data : str
+        Path to a CSV file. The first row is treated as a header and the
+        first column of each row holds the DMU identifier.
+    vrange : Sequence[int], default (0, 0)
+        1-based column indices. When ``assign`` is False the argument is
+        ignored and all columns after the DMU name are used; when True,
+        ``vrange`` lists the specific 1-based columns to extract.
+    assign : bool, default False
+        See ``vrange``.
+
+    Returns
+    -------
+    (dmus, values) : Tuple[List[str], DMUData]
+    """
+    v_idx = [v - 1 for v in vrange]
+    dmus: List[str] = []
+    values: DMUData = {}
+
+    with open(dea_data, newline="", encoding="utf-8") as fh:
+        reader = csv.reader(fh)
+        for row in islice(reader, 1, None):
+            if not row:
+                continue
+            key = row[0].strip()
+            dmus.append(key)
             try:
-             
-                
-                # Initialize LP model
-                m=Model("VRS_output_model")
-                m.setParam('OutputFlag',0) # Muting the optimize function 
-                
-                # The decision variable
-                v,u,v0={},{},{}
-                
-                # Add decision variables
-                for i in range(I):
-                    v[r,i]=m.addVar(vtype=GRB.CONTINUOUS,name="v_%s%d"%(r,i))
-                
-                for j in range(O):
-                    u[r,j]=m.addVar(vtype=GRB.CONTINUOUS,name="u_%s%d"%(r,j))
-                v0[r]=m.addVar(lb=-1000,vtype=GRB.CONTINUOUS,name="v0_%s"%r)
-                
-                
-                m.update()
-                
-                # Add objective function
-                m.setObjective(quicksum(v[r,i]*X[r][i] for i in range(I))+v0[r],GRB.MINIMIZE)
-                
-                # Add constraints
-                m.addConstr(quicksum(u[r,j]*Y[r][j] for j in range(O))==1)
-                for k in DMU:
-                    m.addConstr(quicksum(v[r,i]*X[k][i] for i in range(I))-quicksum(u[r,j]*Y[k][j] for j in range(O))+v0[r] >=0)
-                
-                m.optimize()
-                
-                # Print efficiency            
-                E[r]="The efficiency of DMU %s:%0.3f"%(r,1/m.objVal)
-                
-                print (E[r])
-#                if RTS_check==True:            
-#                    v0_v[r]='%s = %0.3f'%(v0[r].varName,v0[r].X)
-#                    print(v0_v[r])
-        
-            except GurobiError:
-            	print ('GurobiError reported')
+                if assign:
+                    values[key] = [float(row[i]) for i in v_idx]
+                else:
+                    values[key] = [float(v) for v in row[1:]]
+            except ValueError as exc:
+                raise ValueError(
+                    f"Non-numeric value in row for DMU {key!r}: {exc}"
+                ) from exc
 
-    elif(orientation=="output" and dual==True):
-        # TODO solve dual of output-oriented VRS DEA model with LP technique by Gurobi Software (package)      
-        for r in DMU:
-            try:        
-                
-                # The decision variables
-                theta, λ={}, {}
-            
-                # Initialize LP model
-                m=Model("Dual_of_output-oriented_VRS_model")
-                m.setParam('OutputFlag',False)  # Muting the optimize function
-                
-                # Add decision variables
-                for k in DMU:
-                    λ[k]=m.addVar(vtype=GRB.CONTINUOUS,name="λ_%s"%k)
-                theta[r]=m.addVar(vtype=GRB.CONTINUOUS,lb=-1000,name="theta_%s"%r)    
-               
-                m.update()
-                
-                # Add objective function
-                m.setObjective(theta[r],GRB.MAXIMIZE)
-                
-                # Add constraints
-                for j in range(O):
-                    m.addConstr(quicksum(λ[k]*Y[k][j] for k in DMU)>= theta[r]*Y[r][j])
-                for i in range(I):
-                    m.addConstr(quicksum(λ[k]*X[k][i] for k in DMU)<= X[r][i])
-                m.addConstr(quicksum(λ[k] for k in DMU)==1,name='sum of λ')
-                
-                # Start optimize the formulation 
-                m.optimize()
-                
-                # Store the result
-                E[r]="The efficiency of DMU %s:%0.3f"%(r,1/m.objVal)
-                
-        #        for c in m.getConstrs():
-        #            print ("The slack value of %s : %g"%(c.constrName,c.Slack))
-        #        print(m.getAttr('slack', m.getConstrs()))
-        #        print(m.getAttr('x', λ))
-            
-            except GurobiError:
-            	print ('GurobiError reported')
-            
-            # Print efficiency
-            print (E[r]) 
-        
+    return dmus, values
 
-    
-    
+
+# ---------------------------------------------------------------------------
+# Solver helpers
+# ---------------------------------------------------------------------------
+
+# A single CBC solver instance is reused across LPs. ``msg=False`` silences
+# the underlying CBC chatter; use the module logger for any reporting.
+_CBC = PULP_CBC_CMD(msg=False)
+
+# Big-M bound used in place of "free" variables (u0, v0) in the VRS
+# multiplier forms. These variables are theoretically unrestricted in sign,
+# but leaving them unbounded creates a degenerate unbounded ray in the LP
+# under certain inputs (e.g. constant output vectors), which causes CBC to
+# return spurious "optimal" solutions where constraint violations within
+# solver tolerance scale up to noticeable errors in the reported
+# efficiency. The bound matches the original Gurobi implementation and is
+# large enough not to bind on any realistic DEA problem provided inputs
+# and outputs are pre-scaled to roughly unit magnitude.
+_FREE_BOUND = 1000
+
+
+def _solve_or_raise(prob: LpProblem, dmu: str) -> float:
+    """Solve ``prob`` and return its objective value, or raise."""
+    status = prob.solve(_CBC)
+    if status != LpStatusOptimal:
+        raise RuntimeError(
+            f"LP for DMU {dmu!r} terminated with status "
+            f"{LpStatus[status]!r}; cannot report efficiency."
+        )
+    obj = value(prob.objective)
+    if obj is None:
+        raise RuntimeError(f"LP for DMU {dmu!r} returned no objective value.")
+    return float(obj)
+
+
+def _validate_shapes(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> Tuple[int, int]:
+    """Check that all DMUs share a consistent input/output dimensionality."""
+    if not dmus:
+        raise ValueError("No DMUs supplied.")
+    n_in = len(x[dmus[0]])
+    n_out = len(y[dmus[0]])
+    for k in dmus:
+        if len(x[k]) != n_in:
+            raise ValueError(
+                f"DMU {k!r} has {len(x[k])} inputs, expected {n_in}."
+            )
+        if len(y[k]) != n_out:
+            raise ValueError(
+                f"DMU {k!r} has {len(y[k])} outputs, expected {n_out}."
+            )
+    return n_in, n_out
+
+
+def _result_frame(rows: List[Tuple[str, float]]) -> pd.DataFrame:
+    return pd.DataFrame(rows, columns=["DMU", "efficiency"])
+
+
+# ---------------------------------------------------------------------------
+# CRS (Charnes-Cooper-Rhodes) models
+# ---------------------------------------------------------------------------
+
+def crs_input_primal(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> pd.DataFrame:
+    """Input-oriented CRS DEA, multiplier (primal) form."""
+    n_in, n_out = _validate_shapes(dmus, x, y)
+    rows: List[Tuple[str, float]] = []
+    for r in dmus:
+        prob = LpProblem(f"CRS_in_primal_{r}", LpMaximize)
+        v = [LpVariable(f"v_{i}", lowBound=0) for i in range(n_in)]
+        u = [LpVariable(f"u_{j}", lowBound=0) for j in range(n_out)]
+        prob += lpSum(u[j] * y[r][j] for j in range(n_out))
+        prob += lpSum(v[i] * x[r][i] for i in range(n_in)) == 1
+        for k in dmus:
+            prob += (
+                lpSum(u[j] * y[k][j] for j in range(n_out))
+                - lpSum(v[i] * x[k][i] for i in range(n_in))
+                <= 0
+            )
+        rows.append((r, _solve_or_raise(prob, r)))
+    return _result_frame(rows)
+
+
+def crs_input_dual(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> pd.DataFrame:
+    """Input-oriented CRS DEA, envelopment (dual) form."""
+    n_in, n_out = _validate_shapes(dmus, x, y)
+    rows: List[Tuple[str, float]] = []
+    for r in dmus:
+        prob = LpProblem(f"CRS_in_dual_{r}", LpMinimize)
+        lam = {k: LpVariable(f"lam_{k}", lowBound=0) for k in dmus}
+        theta = LpVariable(f"theta_{r}")  # free
+        prob += theta
+        for i in range(n_in):
+            prob += lpSum(lam[k] * x[k][i] for k in dmus) <= theta * x[r][i]
+        for j in range(n_out):
+            prob += lpSum(lam[k] * y[k][j] for k in dmus) >= y[r][j]
+        rows.append((r, _solve_or_raise(prob, r)))
+    return _result_frame(rows)
+
+
+def crs_output_primal(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> pd.DataFrame:
+    """Output-oriented CRS DEA, multiplier (primal) form.
+
+    Efficiency is reported as ``1 / objective`` so that values lie in
+    ``(0, 1]``.
+    """
+    n_in, n_out = _validate_shapes(dmus, x, y)
+    rows: List[Tuple[str, float]] = []
+    for r in dmus:
+        prob = LpProblem(f"CRS_out_primal_{r}", LpMinimize)
+        v = [LpVariable(f"v_{i}", lowBound=0) for i in range(n_in)]
+        u = [LpVariable(f"u_{j}", lowBound=0) for j in range(n_out)]
+        prob += lpSum(v[i] * x[r][i] for i in range(n_in))
+        prob += lpSum(u[j] * y[r][j] for j in range(n_out)) == 1
+        for k in dmus:
+            prob += (
+                lpSum(v[i] * x[k][i] for i in range(n_in))
+                - lpSum(u[j] * y[k][j] for j in range(n_out))
+                >= 0
+            )
+        obj = _solve_or_raise(prob, r)
+        rows.append((r, 1.0 / obj if obj else float("inf")))
+    return _result_frame(rows)
+
+
+def crs_output_dual(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> pd.DataFrame:
+    """Output-oriented CRS DEA, envelopment (dual) form.
+
+    Efficiency is reported as ``1 / objective`` so that values lie in
+    ``(0, 1]``.
+    """
+    n_in, n_out = _validate_shapes(dmus, x, y)
+    rows: List[Tuple[str, float]] = []
+    for r in dmus:
+        prob = LpProblem(f"CRS_out_dual_{r}", LpMaximize)
+        lam = {k: LpVariable(f"lam_{k}", lowBound=0) for k in dmus}
+        phi = LpVariable(f"phi_{r}")  # free
+        prob += phi
+        for j in range(n_out):
+            prob += lpSum(lam[k] * y[k][j] for k in dmus) >= phi * y[r][j]
+        for i in range(n_in):
+            prob += lpSum(lam[k] * x[k][i] for k in dmus) <= x[r][i]
+        obj = _solve_or_raise(prob, r)
+        rows.append((r, 1.0 / obj if obj else float("inf")))
+    return _result_frame(rows)
+
+
+# ---------------------------------------------------------------------------
+# VRS (Banker-Charnes-Cooper) models
+# ---------------------------------------------------------------------------
+
+def vrs_input_primal(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> pd.DataFrame:
+    """Input-oriented VRS DEA, multiplier (primal) form."""
+    n_in, n_out = _validate_shapes(dmus, x, y)
+    rows: List[Tuple[str, float]] = []
+    for r in dmus:
+        prob = LpProblem(f"VRS_in_primal_{r}", LpMaximize)
+        v = [LpVariable(f"v_{i}", lowBound=0) for i in range(n_in)]
+        u = [LpVariable(f"u_{j}", lowBound=0) for j in range(n_out)]
+        # u0 is theoretically free; bound it generously to keep the LP
+        # numerically stable in degenerate cases. The bound is large enough
+        # not to bind in any realistic problem.
+        u0 = LpVariable(f"u0_{r}", lowBound=-_FREE_BOUND, upBound=_FREE_BOUND)
+        prob += lpSum(u[j] * y[r][j] for j in range(n_out)) - u0
+        prob += lpSum(v[i] * x[r][i] for i in range(n_in)) == 1
+        for k in dmus:
+            prob += (
+                lpSum(u[j] * y[k][j] for j in range(n_out))
+                - lpSum(v[i] * x[k][i] for i in range(n_in))
+                - u0
+                <= 0
+            )
+        rows.append((r, _solve_or_raise(prob, r)))
+    return _result_frame(rows)
+
+
+def vrs_input_dual(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> pd.DataFrame:
+    """Input-oriented VRS DEA, envelopment (dual) form."""
+    n_in, n_out = _validate_shapes(dmus, x, y)
+    rows: List[Tuple[str, float]] = []
+    for r in dmus:
+        prob = LpProblem(f"VRS_in_dual_{r}", LpMinimize)
+        lam = {k: LpVariable(f"lam_{k}", lowBound=0) for k in dmus}
+        theta = LpVariable(f"theta_{r}")
+        prob += theta
+        for i in range(n_in):
+            prob += lpSum(lam[k] * x[k][i] for k in dmus) <= theta * x[r][i]
+        for j in range(n_out):
+            prob += lpSum(lam[k] * y[k][j] for k in dmus) >= y[r][j]
+        prob += lpSum(lam[k] for k in dmus) == 1  # VRS convexity
+        rows.append((r, _solve_or_raise(prob, r)))
+    return _result_frame(rows)
+
+
+def vrs_output_primal(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> pd.DataFrame:
+    """Output-oriented VRS DEA, multiplier (primal) form.
+
+    Efficiency is reported as ``1 / objective`` so that values lie in
+    ``(0, 1]``.
+    """
+    n_in, n_out = _validate_shapes(dmus, x, y)
+    rows: List[Tuple[str, float]] = []
+    for r in dmus:
+        prob = LpProblem(f"VRS_out_primal_{r}", LpMinimize)
+        v = [LpVariable(f"v_{i}", lowBound=0) for i in range(n_in)]
+        u = [LpVariable(f"u_{j}", lowBound=0) for j in range(n_out)]
+        # v0 is theoretically free; see comment on u0 in vrs_input_primal.
+        v0 = LpVariable(f"v0_{r}", lowBound=-_FREE_BOUND, upBound=_FREE_BOUND)
+        prob += lpSum(v[i] * x[r][i] for i in range(n_in)) + v0
+        prob += lpSum(u[j] * y[r][j] for j in range(n_out)) == 1
+        for k in dmus:
+            prob += (
+                lpSum(v[i] * x[k][i] for i in range(n_in))
+                - lpSum(u[j] * y[k][j] for j in range(n_out))
+                + v0
+                >= 0
+            )
+        obj = _solve_or_raise(prob, r)
+        rows.append((r, 1.0 / obj if obj else float("inf")))
+    return _result_frame(rows)
+
+
+def vrs_output_dual(
+    dmus: Sequence[str], x: DMUData, y: DMUData
+) -> pd.DataFrame:
+    """Output-oriented VRS DEA, envelopment (dual) form.
+
+    Efficiency is reported as ``1 / objective`` so that values lie in
+    ``(0, 1]``.
+    """
+    n_in, n_out = _validate_shapes(dmus, x, y)
+    rows: List[Tuple[str, float]] = []
+    for r in dmus:
+        prob = LpProblem(f"VRS_out_dual_{r}", LpMaximize)
+        lam = {k: LpVariable(f"lam_{k}", lowBound=0) for k in dmus}
+        phi = LpVariable(f"phi_{r}")
+        prob += phi
+        for j in range(n_out):
+            prob += lpSum(lam[k] * y[k][j] for k in dmus) >= phi * y[r][j]
+        for i in range(n_in):
+            prob += lpSum(lam[k] * x[k][i] for k in dmus) <= x[r][i]
+        prob += lpSum(lam[k] for k in dmus) == 1  # VRS convexity
+        obj = _solve_or_raise(prob, r)
+        rows.append((r, 1.0 / obj if obj else float("inf")))
+    return _result_frame(rows)
+
+
+# ---------------------------------------------------------------------------
+# Back-compatible dispatchers
+# ---------------------------------------------------------------------------
+
+_CRS_DISPATCH = {
+    ("input", False): crs_input_primal,
+    ("input", True): crs_input_dual,
+    ("output", False): crs_output_primal,
+    ("output", True): crs_output_dual,
+}
+
+_VRS_DISPATCH = {
+    ("input", False): vrs_input_primal,
+    ("input", True): vrs_input_dual,
+    ("output", False): vrs_output_primal,
+    ("output", True): vrs_output_dual,
+}
+
+
+def CRS(  # noqa: N802 - keep historical capitalisation for API compatibility
+    DMU: Sequence[str],
+    X: DMUData,
+    Y: DMUData,
+    orientation: str,
+    dual: bool,
+) -> pd.DataFrame:
+    """Backward-compatible CRS dispatcher.
+
+    Parameters
+    ----------
+    DMU : Sequence[str]
+        Ordered DMU identifiers.
+    X, Y : DMUData
+        Input and output dictionaries keyed by DMU.
+    orientation : {'input', 'output'}
+    dual : bool
+        If True, the envelopment (dual) form is solved; otherwise the
+        multiplier (primal) form is solved.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``['DMU', 'efficiency']``.
+    """
+    key = (str(orientation).lower(), bool(dual))
+    if key not in _CRS_DISPATCH:
+        raise ValueError(
+            f"Unknown CRS combination orientation={orientation!r}, "
+            f"dual={dual!r}."
+        )
+    return _CRS_DISPATCH[key](DMU, X, Y)
+
+
+def VRS(  # noqa: N802 - keep historical capitalisation for API compatibility
+    DMU: Sequence[str],
+    X: DMUData,
+    Y: DMUData,
+    orientation: str,
+    dual: bool,
+) -> pd.DataFrame:
+    """Backward-compatible VRS dispatcher.
+
+    See :func:`CRS` for parameter semantics.
+    """
+    key = (str(orientation).lower(), bool(dual))
+    if key not in _VRS_DISPATCH:
+        raise ValueError(
+            f"Unknown VRS combination orientation={orientation!r}, "
+            f"dual={dual!r}."
+        )
+    return _VRS_DISPATCH[key](DMU, X, Y)
+
+
+__all__ = [
+    "csv2dict",
+    "csv2dict_sep",
+    "CRS",
+    "VRS",
+    "crs_input_primal",
+    "crs_input_dual",
+    "crs_output_primal",
+    "crs_output_dual",
+    "vrs_input_primal",
+    "vrs_input_dual",
+    "vrs_output_primal",
+    "vrs_output_dual",
+]

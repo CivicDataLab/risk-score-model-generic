@@ -117,13 +117,13 @@ The key constraint is that all variables must be spatially aggregated to the sam
 
 ## Configuration
 
-Edit `RiskScoreModel/config/hazard_config.py` to adapt the model:
+Edit `RiskScoreModel/config/hazard_config.toml` to adapt the model. Shared path and column settings are in `base_config.toml`.
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `HAZARD_VARS` | `[inundation_intensity_mean_nonzero, inundation_intensity_sum, drainage_density, mean_rain, max_rain]` | List of input variable column names |
-| `QUANTILE_THRESHOLDS` | `[0.35, 0.60, 0.80, 0.95]` | Percentile cut-points for classification |
-| `HAZARD_CLASSES` | `[1, 2, 3, 4, 5]` | Output class labels |
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `inputs.variables` | `[inundation_intensity_mean_nonzero, inundation_intensity_sum, drainage_density, mean_rain, max_rain]` | List of input variable column names |
+| `classification.quantile_thresholds` | `[0.35, 0.60, 0.80, 0.95]` | Percentile cut-points for classification |
+| `classification.classes` | `[1, 2, 3, 4, 5]` | Output class labels |
 
 ---
 

@@ -218,11 +218,15 @@ Contains both block-level rows and district-level summary rows, with:
 
 ## Adapting for a New Geography
 
-| Element | What to change |
-|---------|---------------|
-| Factor weights | Edit `fldhzd_w`, `exp_w`, `vul_w`, `resp_w` in `topis_riskscore_district.py` |
-| Number of risk classes | Change `bins=5` in `pd.cut` |
-| District lookup | Replace `assets/district_objectid.csv` with local district IDs |
-| Indicator columns | Update `indicators` list and `aggregation_rules` dict to match available columns |
-| Fiscal year logic | Update `get_financial_year()` function for local fiscal year calendar |
-| Column rename | Update `rename(columns=...)` calls for local variable name conventions |
+All settings are in `RiskScoreModel/config/topsis_config.toml`. No Python edits are needed.
+
+| Element | Where to change | What to edit |
+|---------|----------------|-------------|
+| Factor weights | `topsis_config.toml` → `[weights]` | `flood_hazard`, `exposure`, `vulnerability`, `government_response` |
+| Number of risk classes | `topsis_config.toml` → `classification.n_bins` | Integer (default `5`) |
+| District lookup | `assets/district_objectid.csv` | Replace with local district-to-ID mapping |
+| Indicator columns and aggregation | `topsis_config.toml` → `[indicators]` | Remove rows for columns absent in your data; add new rows for additional columns |
+| Output rounding | `topsis_config.toml` → `[rounding]` | Column name → decimal places |
+| Fiscal year logic (response score) | `govtresponse_config.toml` → `fiscal_year.start_month` | Month number when fiscal year starts (default `4` for April) |
+
+For a full step-by-step guide covering all factor scripts, see [getting_started.md](./getting_started.md).
