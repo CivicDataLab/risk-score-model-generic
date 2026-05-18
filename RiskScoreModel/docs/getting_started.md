@@ -17,7 +17,7 @@ flowchart TD
     D[vulnerability.py] --> D1[factor_scores_l1_vulnerability.csv]
     E[govtresponse.py] --> E1[factor_scores_l1_government-response.csv]
 
-    B1 & C1 & D1 & E1 --> F[topis_riskscore_district.py]
+    B1 & C1 & D1 & E1 --> F[topsis_riskscore.py]
 
     F --> G([risk_score_final_district.csv\nComposite risk score — block and district level])
 ```
@@ -72,16 +72,16 @@ Requires two groups of variables:
 | Column | Description |
 |--------|-------------|
 | `mean_sex_ratio` | Females per 1,000 males |
-| `schools_count` | Schools per km² |
-| `health_centres_count` | Health centres per km² |
-| `rail_length` | Rail track length per km² |
-| `road_length` | Road length per km² |
+| `schools_count` | Schools per administrative unit |
+| `health_centres_count` | Health centres per administrative unit |
+| `rail_length` | Rail track length per administrative unit |
+| `road_length` | Road length per administrative unit |
 | `net_sown_area_in_hac` | Agricultural sown area |
 | `avg_electricity` | Electricity access score (0–1) |
 | `rc_piped_hhds_pct` | Percentage of households with piped water |
 | `rc_nosanitation_hhds_pct` | Percentage of households without sanitation |
-| `sum_aged_population` | Elderly population per km² |
-| `Embankment breached` | Flood protection failures per km² |
+| `sum_aged_population` | Elderly population per administrative unit |
+| `Embankment breached` | Flood protection failures per administrative unit |
 
 **Damage outputs** (observed flood impacts):
 
@@ -199,7 +199,7 @@ python RiskScoreModel/scripts/govtresponse.py
 Once all four have completed, run the TOPSIS aggregation:
 
 ```bash
-python RiskScoreModel/scripts/topis_riskscore_district.py
+python RiskScoreModel/scripts/topsis_riskscore.py
 ```
 
 ---

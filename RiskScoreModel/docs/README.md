@@ -42,7 +42,7 @@ flowchart TD
     B1 & C1 & D1 & E1 --> F
 
     subgraph TOPSIS["TOPSIS Aggregation"]
-        F[topis_riskscore_district.py\nWeighted TOPSIS per month] --> G[risk_score.csv\nBlock-level risk score]
+        F[topsis_riskscore.py\nWeighted TOPSIS per month] --> G[risk_score.csv\nBlock-level risk score]
         G --> H[District aggregation\n+ indicator rollup]
         H --> I[risk_score_final_district.csv\nPlatform-ready output]
     end
@@ -58,7 +58,7 @@ flowchart TD
 | [score_exposure.md](./score_exposure.md) | Exposure | MinMax scale + std-dev bins | `exposure.py` |
 | [score_vulnerability.md](./score_vulnerability.md) | Vulnerability | DEA (CRS) efficiency + Jenks breaks | `vulnerability.py` |
 | [score_government_response.md](./score_government_response.md) | Government Response | FY cumulative sum + MinMax + std-dev bins | `govtresponse.py` |
-| [topsis_risk_score.md](./topsis_risk_score.md) | Composite Risk | Weighted TOPSIS + district rollup | `topis_riskscore_district.py` |
+| [topsis_risk_score.md](./topsis_risk_score.md) | Composite Risk | Weighted TOPSIS + district rollup | `topsis_riskscore.py` |
 
 ---
 

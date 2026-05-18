@@ -74,8 +74,6 @@ The composite score is classified using the month's mean (μ) and standard devia
 | 4 (High) | μ + 2σ < composite ≤ μ + 3σ |
 | 5 (Very High) | composite > μ + 3σ |
 
-This produces a **right-skewed classification** where most units fall in classes 1–2 and only a small number of densely populated units reach class 5, which reflects realistic population distribution patterns.
-
 ---
 
 ## Input Variable Requirements

@@ -1,12 +1,14 @@
-import sys
 import os
+import sys
+import warnings
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
-import warnings
+
 from config.loader import load_config
 
 warnings.filterwarnings("ignore")
@@ -21,7 +23,7 @@ def calculate_exposure_scores(df, exposure_vars, classes):
     df["_sum"] = df[exposure_vars].sum(axis=1)
 
     mean = df["_sum"].mean()
-    std  = df["_sum"].std()
+    std = df["_sum"].std()
 
     conditions = [
         df["_sum"] <= mean,
@@ -38,11 +40,11 @@ def main():
     cfg = load_config("exposure_config")
 
     exposure_vars = cfg["inputs"]["variables"]
-    classes       = cfg["classification"]["classes"]
-    class_col     = cfg["output"]["class_column"]
-    time_col      = cfg["columns"]["time_column"]
+    classes = cfg["classification"]["classes"]
+    class_col = cfg["output"]["class_column"]
+    time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
-    data_path     = os.path.join(_RISKMODEL_DIR, cfg["paths"]["data_folder"])
+    data_path = os.path.join(_RISKMODEL_DIR, cfg["paths"]["data_folder"])
 
     master_variables = pd.read_csv(os.path.join(data_path, cfg["paths"]["input_file"]))
 
@@ -53,7 +55,7 @@ def main():
         ][exposure_vars + [time_col, object_id_col]].copy()
         results.append(calculate_exposure_scores(month_data, exposure_vars, classes))
 
-    exposure         = pd.concat(results)
+    exposure = pd.concat(results)
     master_variables = master_variables.merge(
         exposure[[time_col, object_id_col, class_col]],
         on=[time_col, object_id_col],

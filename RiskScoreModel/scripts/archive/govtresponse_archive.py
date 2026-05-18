@@ -1,5 +1,5 @@
 import numpy as np
-import DEA
+import dea
 import pandas as pd
 import os
 from tqdm import tqdm
@@ -86,7 +86,7 @@ for month in tqdm(govtresponse_df.timeperiod.unique()):
 
     DMU = list(govtresponse_df_month.index.astype(int))
 
-    df = DEA.CRS(DMU, X, y, orientation="input", dual=False)
+    df = dea.CRS(DMU, X, y, orientation="input", dual=False)
 
     print(month)
 

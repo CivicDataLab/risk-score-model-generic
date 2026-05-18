@@ -1,5 +1,5 @@
-import tomllib
 import os
+import tomllib
 
 _CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 

@@ -1,6 +1,6 @@
 # TOPSIS Risk Score & Final Output — Methodology
 
-**Script:** `RiskScoreModel/scripts/topis_riskscore_district.py`
+**Script:** `RiskScoreModel/scripts/topsis_riskscore.py`
 **TOPSIS class:** `RiskScoreModel/scripts/topsis.py`
 **Input:** All four `factor_scores_l1_*.csv` files (merged)
 **Outputs:**
@@ -99,7 +99,7 @@ Default weights:
 | `government-response` | **2** | Response capacity mitigates risk |
 | `exposure` | **1** | Population at risk; context factor |
 
-> Weights are set as integer literals in `topis_riskscore_district.py` (`fldhzd_w`, `exp_w`, `vul_w`, `resp_w`). The weightages are defined using the document “Disaster Risk and Resilience in India” drafted by the Ministry of Home Affairs and UNDP. 
+> Weights are set as integer literals in `topsis_riskscore.py` (`fldhzd_w`, `exp_w`, `vul_w`, `resp_w`). The weightages are defined using the document “Disaster Risk and Resilience in India” drafted by the Ministry of Home Affairs and UNDP. 
 
 ### Step 4 — Ideal Solutions
 
@@ -185,7 +185,7 @@ Required for joining district-level aggregations to geographic IDs. Must contain
 
 ### Indicator Variables (optional)
 
-The 50+ raw indicator columns from `MASTER_VARIABLES.csv` are carried through and aggregated to district level for the platform's drill-down display. These are listed in the `indicators` and `aggregation_rules` dictionaries in `topis_riskscore_district.py`. Remove or add columns as appropriate for a new geography.
+The 50+ raw indicator columns from `MASTER_VARIABLES.csv` are carried through and aggregated to district level for the platform's drill-down display. These are listed in the `indicators` and `aggregation_rules` dictionaries in `topsis_riskscore.py`. Remove or add columns as appropriate for a new geography.
 
 ---
 

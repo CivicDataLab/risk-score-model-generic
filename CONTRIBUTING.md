@@ -41,7 +41,7 @@ python RiskScoreModel/scripts/hazard.py
 python RiskScoreModel/scripts/exposure.py
 python RiskScoreModel/scripts/vulnerability.py
 python RiskScoreModel/scripts/govtresponse.py
-python RiskScoreModel/scripts/topis_riskscore_district.py
+python RiskScoreModel/scripts/topsis_riskscore.py
 ```
 
 ---

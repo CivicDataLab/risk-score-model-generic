@@ -18,7 +18,7 @@ n_bins = 5
 # Paths relative to the RiskScoreModel/ directory.
 district_lookup_file = "assets/district_objectid.csv"
 output_file          = "data/risk_score.csv"
-final_output_file    = "data/risk_score_final_district.csv"
+final_output_file    = "data/risk_score_district.csv"
 
 [cumulative_vars]
 # These columns get financial-year running cumulative sums recomputed inside the TOPSIS

@@ -1,13 +1,15 @@
-import sys
 import os
+import sys
+import warnings
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
-import warnings
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
+from tqdm import tqdm
+
 from config.loader import load_config
 
 warnings.filterwarnings("ignore")
@@ -17,13 +19,15 @@ _RISKMODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def calculate_hazard_scores(df, cfg):
     hazard_vars = cfg["inputs"]["variables"]
-    float_col   = cfg["output"]["float_column"]
-    class_col   = cfg["output"]["class_column"]
+    float_col = cfg["output"]["float_column"]
+    class_col = cfg["output"]["class_column"]
 
     transformed = pd.DataFrame()
     for var in hazard_vars:
         transformed[var] = np.log1p(df[var])
-        transformed[var] = (transformed[var] - transformed[var].mean()) / transformed[var].std()
+        mean = transformed[var].mean()
+        std = transformed[var].std()
+        transformed[var] = (transformed[var] - mean) / std
 
     df[float_col] = transformed[hazard_vars].mean(axis=1)
 
@@ -38,7 +42,7 @@ def calculate_hazard_scores(df, cfg):
 
     df[class_col] = np.select(conditions, cfg["classification"]["classes"], default=1)
 
-    time_col      = cfg["columns"]["time_column"]
+    time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
     return df[[time_col, object_id_col, class_col, float_col]]
 
@@ -46,7 +50,7 @@ def calculate_hazard_scores(df, cfg):
 def plot_hazard_distribution(df, cfg, output_path=None):
     float_col = cfg["output"]["float_column"]
     class_col = cfg["output"]["class_column"]
-    figsize   = cfg["plot"]["figsize"]
+    figsize = cfg["plot"]["figsize"]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
@@ -75,7 +79,7 @@ def plot_hazard_distribution(df, cfg, output_path=None):
 
 def validate_hazard_distribution(df, cfg):
     class_col = cfg["output"]["class_column"]
-    dist  = df[class_col].value_counts().sort_index()
+    dist = df[class_col].value_counts().sort_index()
     total = len(df)
 
     print("\nHazard Distribution Validation:")
@@ -85,10 +89,10 @@ def validate_hazard_distribution(df, cfg):
         print(f"Class {class_num}: {count:,} ({count / total * 100:.1f}%)")
 
     checks = {
-        "All classes present":  len(dist) == 5,
-        "Class range valid":    df[class_col].between(1, 5).all(),
-        "Decreasing trend":     dist.iloc[0] > dist.iloc[-1],
-        "No missing values":    df[class_col].notna().all(),
+        "All classes present": len(dist) == 5,
+        "Class range valid": df[class_col].between(1, 5).all(),
+        "Decreasing trend": dist.iloc[0] > dist.iloc[-1],
+        "No missing values": df[class_col].notna().all(),
     }
 
     print("\nValidation Checks:")
@@ -113,10 +117,10 @@ def print_variable_statistics(df, hazard_vars):
 def main():
     cfg = load_config("hazard_config")
 
-    hazard_vars   = cfg["inputs"]["variables"]
-    time_col      = cfg["columns"]["time_column"]
+    hazard_vars = cfg["inputs"]["variables"]
+    time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
-    data_path     = os.path.join(_RISKMODEL_DIR, cfg["paths"]["data_folder"])
+    data_path = os.path.join(_RISKMODEL_DIR, cfg["paths"]["data_folder"])
 
     master_variables = pd.read_csv(os.path.join(data_path, cfg["paths"]["input_file"]))
 
@@ -129,7 +133,7 @@ def main():
         ][hazard_vars + [time_col, object_id_col]].copy()
         results.append(calculate_hazard_scores(month_data, cfg))
 
-    hazard_scores    = pd.concat(results)
+    hazard_scores = pd.concat(results)
     master_variables = master_variables.merge(hazard_scores, on=[time_col, object_id_col])
 
     is_valid = validate_hazard_distribution(master_variables, cfg)

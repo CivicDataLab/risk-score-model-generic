@@ -1,6 +1,6 @@
 # Intelligent Data Solution for Disaster Risk Reduction (IDS-DRR)
 
-**A geography-agnostic, open-source model for computing flood risk scores from publicly available data.**
+**An open-source model based on the Sendai DRR framework for computing flood risk scores from publicly available data.**
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -10,9 +10,9 @@
 
 ## Overview
 
-Data that could enable more effective disaster-risk response and management is scattered or siloed across different agencies, at different scales and formats, making it difficult for decision-makers and relevant stakeholders to make data-informed decisions. The availability of good quality, machine-readable, and interoperable data is crucial for effective climate action and disaster response. However, in many contexts — and particularly in India — this data is fragmented across agencies, making timely, data-informed decisions difficult.
+Data that could enable more effective disaster-risk response and management is scattered or siloed across different agencies, at different scales and formats, making it difficult for decision-makers and relevant stakeholders to make data-informed decisions. The availability of good quality, machine-readable, and interoperable data is crucial for effective climate action and disaster response. However, in many contexts this data is fragmented across agencies, making timely, data-informed decisions difficult.
 
-This repository contains the **risk-score model** of the IDS-DRR pipeline: a configurable system that combines climate, losses & damages, procurement, and demographic data into a single composite flood risk score at sub-district (block) and district level. It is designed to be adapted to any geography for which the required input variables are available.
+This repository contains the **risk-score model** of the IDS-DRR pipeline: a configurable system that combines climate, infrastructure access, losses & damages, procurement, and demographic data into a single composite flood risk score at district and sub-district (block/tehsil) levels. It is designed to be adapted to any geography for which the required input variables are available.
 
 Originally developed for the state of Assam, India, this generic version of the codebase abstracts geography- and source-specific assumptions into configuration files so that the same scripts can be applied to other states, regions, or countries.
 
@@ -75,7 +75,7 @@ flowchart LR
     M --> V[vulnerability.py]
     M --> G[govtresponse.py]
 
-    H --> T[topis_riskscore_district.py<br/>TOPSIS aggregation]
+    H --> T[topsis_riskscore.py<br/>TOPSIS aggregation]
     E --> T
     V --> T
     G --> T
@@ -113,7 +113,7 @@ python RiskScoreModel/scripts/hazard.py
 python RiskScoreModel/scripts/exposure.py
 python RiskScoreModel/scripts/vulnerability.py
 python RiskScoreModel/scripts/govtresponse.py
-python RiskScoreModel/scripts/topis_riskscore_district.py
+python RiskScoreModel/scripts/topsis_riskscore.py
 ```
 
 Each script reads `RiskScoreModel/data/MASTER_VARIABLES.csv` (or the file named in your config) and writes a CSV under `RiskScoreModel/data/`. The final composite is `risk_score_final_district.csv`.

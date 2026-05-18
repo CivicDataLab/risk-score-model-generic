@@ -1,12 +1,12 @@
 TOL = 1e-3  # CBC LP precision with the big-M bound on u0/v0 is ~1e-4 in
-            # the worst case; 1e-3 is a safe, generous threshold for DEA.
+            # the worst case; 1e-3 is a safe, generous threshold for dea.
 import sys
 sys.path.insert(0, "/home/claude")
 
 import csv
 import os
 import tempfile
-import DEA
+import dea
 
 # Textbook 5-DMU, 2-input, 1-output example.
 dmus = ["A", "B", "C", "D", "E"]
@@ -16,8 +16,8 @@ Y = {"A": [1.0],     "B": [1.0],      "C": [1.0],
      "D": [1.0],     "E": [1.0]}
 
 print("=== CRS input-oriented ===")
-primal = DEA.CRS(dmus, X, Y, "input", dual=False)
-dual   = DEA.CRS(dmus, X, Y, "input", dual=True)
+primal = dea.CRS(dmus, X, Y, "input", dual=False)
+dual   = dea.CRS(dmus, X, Y, "input", dual=True)
 print("primal:\n", primal)
 print("dual:\n", dual)
 
@@ -27,8 +27,8 @@ for a, b in zip(primal["efficiency"], dual["efficiency"]):
 print("OK: CRS input primal == dual")
 
 print("\n=== CRS output-oriented ===")
-op = DEA.CRS(dmus, X, Y, "output", dual=False)
-od = DEA.CRS(dmus, X, Y, "output", dual=True)
+op = dea.CRS(dmus, X, Y, "output", dual=False)
+od = dea.CRS(dmus, X, Y, "output", dual=True)
 print("primal:\n", op)
 print("dual:\n", od)
 for a, b in zip(op["efficiency"], od["efficiency"]):
@@ -41,8 +41,8 @@ for a, b in zip(primal["efficiency"], op["efficiency"]):
 print("OK: CRS input == CRS output (theory)")
 
 print("\n=== VRS input-oriented ===")
-vp = DEA.VRS(dmus, X, Y, "input", dual=False)
-vd = DEA.VRS(dmus, X, Y, "input", dual=True)
+vp = dea.VRS(dmus, X, Y, "input", dual=False)
+vd = dea.VRS(dmus, X, Y, "input", dual=True)
 print("primal:\n", vp)
 print("dual:\n", vd)
 for a, b in zip(vp["efficiency"], vd["efficiency"]):
@@ -55,8 +55,8 @@ for a, b in zip(primal["efficiency"], vp["efficiency"]):
 print("OK: VRS >= CRS (theory)")
 
 print("\n=== VRS output-oriented ===")
-vop = DEA.VRS(dmus, X, Y, "output", dual=False)
-vod = DEA.VRS(dmus, X, Y, "output", dual=True)
+vop = dea.VRS(dmus, X, Y, "output", dual=False)
+vod = dea.VRS(dmus, X, Y, "output", dual=True)
 print("primal:\n", vop)
 print("dual:\n", vod)
 for a, b in zip(vop["efficiency"], vod["efficiency"]):
@@ -80,7 +80,7 @@ with tempfile.NamedTemporaryFile("w", newline="", suffix=".csv",
         w.writerow([d, X[d][0], X[d][1], Y[d][0]])
 
 try:
-    d2, x2, y2 = DEA.csv2dict(csv_path, in_range=[2, 3], out_range=[4, 4])
+    d2, x2, y2 = dea.csv2dict(csv_path, in_range=[2, 3], out_range=[4, 4])
     assert d2 == dmus
     assert x2 == X
     assert y2 == Y
@@ -88,7 +88,7 @@ try:
 
     # Bad input: in_range starts at 0 -> should raise
     try:
-        DEA.csv2dict(csv_path, in_range=[0, 1], out_range=[3, 3])
+        dea.csv2dict(csv_path, in_range=[0, 1], out_range=[3, 3])
     except ValueError:
         print("OK: csv2dict rejects 0-based indices")
     else:
