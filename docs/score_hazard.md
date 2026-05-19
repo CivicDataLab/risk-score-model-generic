@@ -1,9 +1,9 @@
 # Flood Hazard Score — Methodology
 
-**Script:** `RiskScoreModel/scripts/hazard.py`
-**Config:** `RiskScoreModel/config/hazard_config.py`
-**Input:** `RiskScoreModel/data/MASTER_VARIABLES.csv`
-**Output:** `RiskScoreModel/data/factor_scores_l1_flood-hazard.csv`
+**Script:** `scripts/hazard.py`
+**Config:** `config/hazard_config.toml`
+**Input:** `data/MASTER_VARIABLES.csv`
+**Output:** `data/factor_scores_l1_flood-hazard.csv`
 **Output columns added:** `flood-hazard` (integer 1–5), `flood-hazard-float` (continuous)
 
 ---
@@ -117,7 +117,7 @@ The key constraint is that all variables must be spatially aggregated to the sam
 
 ## Configuration
 
-Edit `RiskScoreModel/config/hazard_config.toml` to adapt the model. Shared path and column settings are in `base_config.toml`.
+Edit `config/hazard_config.toml` to adapt the model. Shared path and column settings are in `base_config.toml`.
 
 | Setting | Default | Description |
 |---------|---------|-------------|

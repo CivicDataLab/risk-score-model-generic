@@ -10,11 +10,10 @@ The model takes a master dataset of spatial variables (one row per geographic un
 
 ```
 risk-score-model-generic/
-└── RiskScoreModel/
-    ├── config/         ← configurable thresholds and variable lists
-    ├── data/           ← MASTER_VARIABLES.csv input + output CSVs
-    ├── scripts/        ← scoring computation scripts
-    └── docs/           ← THIS DIRECTORY — methodology documentation
+├── config/         ← configurable thresholds and variable lists
+├── data/           ← MASTER_VARIABLES.csv input + output CSVs
+├── scripts/        ← scoring computation scripts
+└── docs/           ← THIS DIRECTORY — methodology documentation
 ```
 
 > **Source data documentation** (how raw datasets are ingested and transformed into `MASTER_VARIABLES.csv`) lives in the companion repository:
@@ -66,7 +65,7 @@ flowchart TD
 
 All factor score scripts read from a single master CSV:
 
-**File:** `RiskScoreModel/data/MASTER_VARIABLES.csv`
+**File:** `data/MASTER_VARIABLES.csv`
 
 **Minimum required columns for all scripts:**
 

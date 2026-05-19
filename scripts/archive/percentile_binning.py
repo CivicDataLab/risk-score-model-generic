@@ -145,7 +145,7 @@ def adjust_hazard_classification(float_scores):
 # Modify the main processing loop
 def main():
     # Read the data
-    master_variables = pd.read_csv(os.getcwd()+'/RiskScoreModel/data/MASTER_VARIABLES.csv')
+    master_variables = pd.read_csv(os.getcwd()+'/data/MASTER_VARIABLES.csv')
     hazard_vars = ['inundation_intensity_mean_nonzero', 'inundation_intensity_sum', 
                    'drainage_density', 'mean_rain', 'max_rain']
     hazard_df = master_variables[hazard_vars + ['timeperiod', 'object_id']]
@@ -189,11 +189,11 @@ def main():
         print("\nWarning: Some validation checks failed. Please review the distribution.")
     
     # Create and save visualization
-    plot_path = os.path.join(os.getcwd(), 'RiskScoreModel/data/hazard_distribution.png')
+    plot_path = os.path.join(os.getcwd(), 'data/hazard_distribution.png')
     plot_hazard_distribution(master_variables, plot_path)
     
     # Save results
-    output_path = os.path.join(os.getcwd(), 'RiskScoreModel/data/factor_scores_l1_flood-hazard.csv')
+    output_path = os.path.join(os.getcwd(), 'data/factor_scores_l1_flood-hazard.csv')
     master_variables.to_csv(output_path, index=False)
     print(f"\nResults saved to: {output_path}")
 

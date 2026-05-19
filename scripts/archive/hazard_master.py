@@ -150,7 +150,7 @@ def main():
     ]
     
     # Read data
-    base_path = os.path.join(os.getcwd(), 'RiskScoreModel', 'data')
+    base_path = os.path.join(os.getcwd(), 'data')
     master_variables = pd.read_csv(os.path.join(base_path, 'MASTER_VARIABLES.csv'))
     
     # Print initial statistics

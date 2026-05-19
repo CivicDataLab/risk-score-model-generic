@@ -1,4 +1,4 @@
-from RiskScoreModel.scripts.archive.base_config import *
+from scripts.archive.base_config import *
 
 # Hazard Variables
 HAZARD_VARS = [

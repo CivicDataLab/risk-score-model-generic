@@ -1,11 +1,11 @@
 # TOPSIS Risk Score & Final Output — Methodology
 
-**Script:** `RiskScoreModel/scripts/topsis_riskscore.py`
-**TOPSIS class:** `RiskScoreModel/scripts/topsis.py`
+**Script:** `scripts/topsis_riskscore.py`
+**TOPSIS class:** `scripts/topsis.py`
 **Input:** All four `factor_scores_l1_*.csv` files (merged)
 **Outputs:**
-- `RiskScoreModel/data/risk_score.csv` — block-level risk score
-- `RiskScoreModel/data/risk_score_final_district.csv` — platform-ready output (blocks + district summaries)
+- `data/risk_score.csv` — block-level risk score
+- `data/risk_score_final_district.csv` — platform-ready output (blocks + district summaries)
 
 ---
 
@@ -174,7 +174,7 @@ All four must be present, either merged or loadable from separate files:
 
 ### District ID Lookup
 
-**File:** `RiskScoreModel/assets/district_objectid.csv`
+**File:** `assets/district_objectid.csv`
 
 Required for joining district-level aggregations to geographic IDs. Must contain:
 
@@ -218,7 +218,7 @@ Contains both block-level rows and district-level summary rows, with:
 
 ## Adapting for a New Geography
 
-All settings are in `RiskScoreModel/config/topsis_config.toml`. No Python edits are needed.
+All settings are in `config/topsis_config.toml`. No Python edits are needed.
 
 | Element | Where to change | What to edit |
 |---------|----------------|-------------|

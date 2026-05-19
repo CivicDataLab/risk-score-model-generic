@@ -15,7 +15,7 @@ government_response = 2
 n_bins = 5
 
 [paths]
-# Paths relative to the RiskScoreModel/ directory.
+# Paths relative to the repository root.
 district_lookup_file = "assets/district_objectid.csv"
 output_file          = "data/risk_score.csv"
 final_output_file    = "data/risk_score_district.csv"

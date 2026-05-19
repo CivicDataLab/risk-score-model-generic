@@ -37,11 +37,11 @@ pip install -r requirements.txt
 Run the model end-to-end against the bundled sample data to confirm your environment is working:
 
 ```bash
-python RiskScoreModel/scripts/hazard.py
-python RiskScoreModel/scripts/exposure.py
-python RiskScoreModel/scripts/vulnerability.py
-python RiskScoreModel/scripts/govtresponse.py
-python RiskScoreModel/scripts/topsis_riskscore.py
+python scripts/hazard.py
+python scripts/exposure.py
+python scripts/vulnerability.py
+python scripts/govtresponse.py
+python scripts/topsis_riskscore.py
 ```
 
 ---

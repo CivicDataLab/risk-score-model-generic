@@ -30,15 +30,17 @@ The four factor scripts are independent of each other and can run in any order. 
 
 All scripts read from a single master CSV file:
 
-**`RiskScoreModel/data/MASTER_VARIABLES.csv`**
+**`data/MASTER_VARIABLES.csv`**
 
 One row per geographic unit per month. The following columns are required by every script:
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `object_id` | Integer | Unique identifier for each geographic unit |
+| `object_id` | String | Unique identifier for each geographic unit|
 | `timeperiod` | String (`YYYY_MM`) | Month identifier, e.g. `2022_07` |
 | `district` | String | Parent district name for each unit |
+
+Note: In India, 'object_id' is derived from the LGD code system, and in the format 'AA-BBB-CCCCC' where "AA" is an integer ID corresponding to administrative level 1 (State), "BBB" corresponds to admin level 2 (district) and 'CCCCC' corresponds to a 5 digit integer ID corresponding to admin level 3 (subdistrict). 
 
 In addition, each factor score requires its own input variables. The table below shows the default variables and the minimum viable set for each factor:
 
@@ -110,7 +112,7 @@ See [score_vulnerability.md](./score_vulnerability.md) for alternative data sour
 
 ### District ID Lookup
 
-**`RiskScoreModel/assets/district_objectid.csv`**
+**`assets/district_objectid.csv`**
 
 Maps district names to the platform's geographic IDs. Required by the TOPSIS script for district-level aggregation. Must contain:
 
@@ -123,9 +125,9 @@ Maps district names to the platform's geographic IDs. Required by the TOPSIS scr
 
 ## Step 2 — Configure the Project
 
-All configuration lives in TOML files under `RiskScoreModel/config/`. You do not need to edit any Python scripts to adapt the model — only the TOML files.
+All configuration lives in TOML files under `config/`. You do not need to edit any Python scripts to adapt the model — only the TOML files.
 
-### `RiskScoreModel/config/base_config.toml`
+### `config/base_config.toml`
 
 Always review this first. It sets the shared paths and column names used by every script.
 
@@ -136,7 +138,7 @@ Always review this first. It sets the shared paths and column names used by ever
 | `columns.time_column` | `timeperiod` | Your time column has a different name |
 | `columns.object_id_column` | `object_id` | Your geographic ID column is named differently |
 
-### `RiskScoreModel/config/hazard_config.toml`
+### `config/hazard_config.toml`
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
@@ -144,14 +146,14 @@ Always review this first. It sets the shared paths and column names used by ever
 | `classification.quantile_thresholds` | `[0.35, 0.60, 0.80, 0.95]` | You want different classification boundaries |
 | `classification.classes` | `[1, 2, 3, 4, 5]` | You want a different number of risk classes |
 
-### `RiskScoreModel/config/exposure_config.toml`
+### `config/exposure_config.toml`
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
 | `inputs.variables` | `sum_population`, `total_hhd` | You have different population/household columns (min: 1) |
 | `classification.classes` | `[1, 2, 3, 4, 5]` | You want different class labels |
 
-### `RiskScoreModel/config/vulnerability_config.toml`
+### `config/vulnerability_config.toml`
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
@@ -166,14 +168,14 @@ Always review this first. It sets the shared paths and column names used by ever
 
 > **If damage data is not available:** The DEA method requires observed damage data. Without it, consider replacing the DEA with a simpler weighted index over `inputs.condition_vars` only.
 
-### `RiskScoreModel/config/govtresponse_config.toml`
+### `config/govtresponse_config.toml`
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
 | `inputs.variables` | 3 tender/SDRF columns | You have different expenditure columns (min: 1) |
 | `fiscal_year.start_month` | `4` (April) | Your geography uses a different fiscal year calendar |
 
-### `RiskScoreModel/config/topsis_config.toml`
+### `config/topsis_config.toml`
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
@@ -190,23 +192,23 @@ Always review this first. It sets the shared paths and column names used by ever
 All scripts should be run from the repository root. The four factor scripts are independent and can run in any order (or in parallel):
 
 ```bash
-python RiskScoreModel/scripts/hazard.py
-python RiskScoreModel/scripts/exposure.py
-python RiskScoreModel/scripts/vulnerability.py
-python RiskScoreModel/scripts/govtresponse.py
+python scripts/hazard.py
+python scripts/exposure.py
+python scripts/vulnerability.py
+python scripts/govtresponse.py
 ```
 
 Once all four have completed, run the TOPSIS aggregation:
 
 ```bash
-python RiskScoreModel/scripts/topsis_riskscore.py
+python scripts/topsis_riskscore.py
 ```
 
 ---
 
 ## Step 4 — Validate Your Outputs
 
-After running all scripts, the following files should be present in `RiskScoreModel/data/`:
+After running all scripts, the following files should be present in `data/`:
 
 | File | What to check |
 |------|--------------|

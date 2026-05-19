@@ -2,7 +2,7 @@
 # Edit this file to match your input data column names and folder layout.
 
 [paths]
-# Path to the data folder, relative to the RiskScoreModel/ directory.
+# Path to the data folder, relative to the repository root.
 data_folder = "data"
 input_file  = "MASTER_VARIABLES.csv"
 

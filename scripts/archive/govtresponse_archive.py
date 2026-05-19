@@ -1,5 +1,5 @@
 import numpy as np
-import dea
+import scripts.dea as dea
 import pandas as pd
 import os
 from tqdm import tqdm
@@ -8,8 +8,8 @@ import jenkspy
 from pulp import LpProblem, LpMinimize, LpVariable, lpSum, value
 
 
-#df = pd.read_csv(os.getcwd()+'/RiskScoreModel/data/government-response.csv')
-master_variables = pd.read_csv(os.getcwd()+'/RiskScoreModel/data/MASTER_VARIABLES.csv')
+#df = pd.read_csv(os.getcwd()+'/data/government-response.csv')
+master_variables = pd.read_csv(os.getcwd()+'/data/MASTER_VARIABLES.csv')
 
 
 def get_financial_year(timeperiod):
@@ -113,7 +113,7 @@ govt_response = pd.concat(govtresponse_df_months)
 master_variables = master_variables.merge(govt_response[['timeperiod', 'object_id', 'efficiency', 'government-response']],
                        on = ['timeperiod', 'object_id'])
 
-master_variables.to_csv(os.getcwd()+'/RiskScoreModel/data/factor_scores_l1_govtresponse2.csv', index=False)
+master_variables.to_csv(os.getcwd()+'/data/factor_scores_l1_govtresponse2.csv', index=False)
 
 
 

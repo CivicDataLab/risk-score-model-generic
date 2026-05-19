@@ -42,7 +42,7 @@ Several input datasets carry their own terms of use (for example, government ten
 
 ### Sample data included in this repository
 
-The sample dataset shipped in `RiskScoreModel/data/` contains aggregated figures derived from publicly available government sources for the state of Assam. It does not contain individual-level records.
+The sample dataset shipped in `data/` contains aggregated figures derived from publicly available government sources for the state of Assam. It does not contain individual-level records.
 
 ### Downstream outputs
 

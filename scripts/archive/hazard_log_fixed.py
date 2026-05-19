@@ -8,7 +8,7 @@ import warnings
 # Suppress all warnings
 warnings.filterwarnings("ignore")
 
-master_variables = pd.read_csv(os.getcwd()+'/RiskScoreModel/data/MASTER_VARIABLES.csv')
+master_variables = pd.read_csv(os.getcwd()+'/data/MASTER_VARIABLES.csv')
 hazard_vars = ['inundation_intensity_mean_nonzero', 'inundation_intensity_sum', 'drainage_density', 'mean_rain', 'max_rain']
 hazard_df = master_variables[hazard_vars + ['timeperiod', 'object_id']]
 hazard_df_months = []
@@ -58,4 +58,4 @@ hazard = pd.concat(hazard_df_months)
 master_variables = master_variables.merge(hazard[['timeperiod', 'object_id', 'flood-hazard']],
                        on=['timeperiod', 'object_id'])
 
-master_variables.to_csv(os.getcwd()+'/RiskScoreModel/data/factor_scores_l1_flood-hazard.csv', index=False)
+master_variables.to_csv(os.getcwd()+'/data/factor_scores_l1_flood-hazard.csv', index=False)

@@ -35,21 +35,17 @@ By producing transparent, reproducible risk scores at granular administrative le
 
 ```
 risk-score-model-generic/
-├── RiskScoreModel/          The risk-score model itself
-│   ├── scripts/             Factor and aggregation scripts
-│   ├── config/              TOML configuration files
-│   ├── data/                Sample inputs and outputs
-│   ├── assets/              Lookup tables (e.g. district_objectid.csv)
-│   └── docs/                Methodology documentation
+├── scripts/             Factor and aggregation scripts
+├── config/              TOML configuration files
+├── data/                Sample inputs and outputs
+├── assets/              Lookup tables and map boundary tooling
+│   └── Maps/            map_exporter.py + map_transformer.py + GeoJSON examples
+├── docs/                Methodology documentation
 │
-├── Maps/                    Administrative boundary tooling
-│   ├── scripts/             map_exporter.py + map_transformer.py
-│   └── Geojson/Examples/    Sample geometries (Odisha)
-│
-├── CITATION.cff             Citation metadata
-├── LICENSE                  GNU AGPL v3.0
-├── README.md                
-└── requirements.txt         Python dependencies
+├── CITATION.cff         Citation metadata
+├── LICENSE              GNU AGPL v3.0
+├── README.md
+└── requirements.txt     Python dependencies
 ```
 
 This repository covers the **modelling layer** only. Data acquisition is handled by a companion repository — see [Data inputs](#data-inputs-and-the-flood-data-ecosystem) below.
@@ -85,7 +81,7 @@ flowchart LR
 
 The four **factor scripts** (`hazard.py`, `exposure.py`, `vulnerability.py`, `govtresponse.py`) are independent and can run in any order. The **TOPSIS script** then combines their outputs into a single composite risk score weighted by hazard, exposure, vulnerability, and government response.
 
-For a step-by-step walkthrough — including the input schema, configuration options, and per-script methodology — start with [`RiskScoreModel/docs/getting_started.md`](RiskScoreModel/docs/getting_started.md).
+For a step-by-step walkthrough — including the input schema, configuration options, and per-script methodology — start with [`docs/getting_started.md`](docs/getting_started.md).
 
 ---
 
@@ -109,22 +105,22 @@ pip install -r requirements.txt
 ### Run the model with the bundled sample data
 
 ```bash
-python RiskScoreModel/scripts/hazard.py
-python RiskScoreModel/scripts/exposure.py
-python RiskScoreModel/scripts/vulnerability.py
-python RiskScoreModel/scripts/govtresponse.py
-python RiskScoreModel/scripts/topsis_riskscore.py
+python scripts/hazard.py
+python scripts/exposure.py
+python scripts/vulnerability.py
+python scripts/govtresponse.py
+python scripts/topsis_riskscore.py
 ```
 
-Each script reads `RiskScoreModel/data/MASTER_VARIABLES.csv` (or the file named in your config) and writes a CSV under `RiskScoreModel/data/`. The final composite is `risk_score_final_district.csv`.
+Each script reads `data/MASTER_VARIABLES.csv` (or the file named in your config) and writes a CSV under `data/`. The final composite is `risk_score_final_district.csv`.
 
-To adapt the model to a new geography, follow [`RiskScoreModel/docs/getting_started.md`](RiskScoreModel/docs/getting_started.md).
+To adapt the model to a new geography, follow [`docs/getting_started.md`](docs/getting_started.md).
 
 ---
 
 ## Configuration
 
-Configuration TOML files are available under `RiskScoreModel/config/`. The loader (`config/loader.py`) merges `base_config.toml` with the script-specific file at runtime:
+Configuration TOML files are available under `config/`. The loader (`config/loader.py`) merges `base_config.toml` with the script-specific file at runtime:
 
 | File | Controls |
 |------|----------|
@@ -143,13 +139,13 @@ Adapting the model to a new geography is mostly a matter of editing these TOMLs 
 
 | Document | Contents |
 |----------|----------|
-| [`getting_started.md`](RiskScoreModel/docs/getting_started.md) | End-to-end guide for adapting the model to a new geography |
-| [`score_hazard.md`](RiskScoreModel/docs/score_hazard.md) | Flood Hazard methodology |
-| [`score_exposure.md`](RiskScoreModel/docs/score_exposure.md) | Exposure methodology |
-| [`score_vulnerability.md`](RiskScoreModel/docs/score_vulnerability.md) | Vulnerability methodology (DEA) |
-| [`score_government_response.md`](RiskScoreModel/docs/score_government_response.md) | Government Response methodology |
-| [`topsis_risk_score.md`](RiskScoreModel/docs/topsis_risk_score.md) | TOPSIS composite score and final output |
-| [`Maps/scripts/`](Maps/scripts/) | admin-boundary download and transformation tooling for India |
+| [`getting_started.md`](docs/getting_started.md) | End-to-end guide for adapting the model to a new geography |
+| [`score_hazard.md`](docs/score_hazard.md) | Flood Hazard methodology |
+| [`score_exposure.md`](docs/score_exposure.md) | Exposure methodology |
+| [`score_vulnerability.md`](docs/score_vulnerability.md) | Vulnerability methodology (DEA) |
+| [`score_government_response.md`](docs/score_government_response.md) | Government Response methodology |
+| [`topsis_risk_score.md`](docs/topsis_risk_score.md) | TOPSIS composite score and final output |
+| [`assets/Maps/scripts/`](assets/Maps/scripts/) | admin-boundary download and transformation tooling for India |
 
 ---
 
@@ -163,7 +159,7 @@ The acquisition, cleaning, and joining of those variables is handled by a compan
 
 That repository contains per-source extractors for the Indian Meteorological Department (IMD), ISRO Bhuvan, WorldPop, NASADEM, Mission Antyodaya, BharatMaps, WRIS, and government tender portals. Its output is the master CSV that this model consumes.
 
-For testing and demonstration, this repository ships with a small sample dataset in `RiskScoreModel/data/` so the model can be run end-to-end without first running the data pipeline.
+For testing and demonstration, this repository ships with a small sample dataset in `data/` so the model can be run end-to-end without first running the data pipeline.
 
 ---
 
@@ -176,7 +172,7 @@ All inputs and outputs use non-proprietary, machine-readable formats:
 - **Configuration** — TOML
 - **Documentation** — Markdown
 
-Output columns and their semantics are documented inline in each methodology document and summarised in [`RiskScoreModel/data/data_dictionary.csv`](RiskScoreModel/data/data_dictionary.csv).
+Output columns and their semantics are documented inline in each methodology document and summarised in [`data/data_dictionary.csv`](data/data_dictionary.csv).
 
 
 ---

@@ -6,7 +6,7 @@ sys.path.insert(0, "/home/claude")
 import csv
 import os
 import tempfile
-import dea
+import scripts.dea as dea
 
 # Textbook 5-DMU, 2-input, 1-output example.
 dmus = ["A", "B", "C", "D", "E"]

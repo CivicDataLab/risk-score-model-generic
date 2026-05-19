@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from config.loader import load_config
-from topsis import Topsis
+from scripts.topsis import Topsis
 
 
 _RISKMODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

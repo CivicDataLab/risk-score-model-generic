@@ -1,8 +1,8 @@
 # Government Response Score — Methodology
 
-**Script:** `RiskScoreModel/scripts/govtresponse.py`
-**Input:** `RiskScoreModel/data/MASTER_VARIABLES.csv`
-**Output:** `RiskScoreModel/data/factor_scores_l1_government-response.csv`
+**Script:** `scripts/govtresponse.py`
+**Input:** `data/MASTER_VARIABLES.csv`
+**Output:** `data/factor_scores_l1_government-response.csv`
 **Output column added:** `government-response` (integer 1–5)
 
 ---

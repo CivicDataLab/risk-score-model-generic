@@ -3,7 +3,7 @@
 # ==========================
 
 # Folder Structure
-BASE_FOLDER = "RiskScoreModel"
+BASE_FOLDER = ""
 DATA_FOLDER = "data"
 
 # File Names

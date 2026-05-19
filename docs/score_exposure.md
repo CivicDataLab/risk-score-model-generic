@@ -1,8 +1,8 @@
 # Exposure Score — Methodology
 
-**Script:** `RiskScoreModel/scripts/exposure.py`
-**Input:** `RiskScoreModel/data/MASTER_VARIABLES.csv`
-**Output:** `RiskScoreModel/data/factor_scores_l1_exposure.csv`
+**Script:** `scripts/exposure.py`
+**Input:** `data/MASTER_VARIABLES.csv`
+**Output:** `data/factor_scores_l1_exposure.csv`
 **Output column added:** `exposure` (integer 1–5)
 
 ---
