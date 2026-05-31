@@ -1,4 +1,6 @@
-# Maps — Administrative Boundary Tooling
+# Maps — Administrative Boundary Tooling (India)
+
+> These scripts are India-specific. They download from India's NIC admin2024 ArcGIS service and apply LGD urban/rural classification.
 
 Two scripts for downloading and preparing India administrative boundary data for use with the IDS-DRR risk score model. Run them in order: **export → transform**.
 
@@ -8,7 +10,7 @@ Two scripts for downloading and preparing India administrative boundary data for
 
 ### 1. `map_exporter.py` — Download boundaries from NIC
 
-Downloads state, district, subdistrict, and village boundaries from the [NIC admin2024 ArcGIS REST service](https://webgis1.nic.in/nicstreet/rest/services/admin2024/MapServer/) and writes them as GeoJSON to `Maps/Geojson/`.
+Downloads state, district, subdistrict, and village boundaries from the [NIC admin2024 ArcGIS REST service](https://webgis1.nic.in/nicstreet/rest/services/admin2024/MapServer/) and writes them as GeoJSON to `Geojson/`.
 
 **Source layers used**
 
@@ -22,12 +24,12 @@ Downloads state, district, subdistrict, and village boundaries from the [NIC adm
 **Usage**
 
 ```bash
-cd Maps/scripts
+cd contrib/india/maps
 python map_exporter.py
 # You will be prompted: enter your state name (e.g. Assam, Odisha)
 ```
 
-**Outputs** (written to `Maps/Geojson/`)
+**Outputs** (written to `Geojson/` next to the scripts; created on first run)
 
 ```
 {state}_state.geojson
@@ -46,10 +48,10 @@ If you enter an unrecognised state name the script will print the list of valid 
 
 Reads the GeoJSONs produced by `map_exporter.py`, adds `object_id` join keys, applies urban/rural classification to the village layer, and writes flat CSV exports.
 
-Run from the `Maps/scripts/` directory (the script resolves paths relative to its own location):
+Run from the `contrib/india/maps/` directory (the script resolves paths relative to its own location):
 
 ```bash
-cd Maps/scripts
+cd contrib/india/maps
 python map_transformer.py
 ```
 
@@ -74,25 +76,21 @@ Census Towns (CT) and Out Growths (OG) appear in the village layer. Statutory to
 
 | File | Location |
 |------|----------|
-| `{state}_districts.csv` | `Maps/csv/` |
-| `{state}_subdistricts.csv` | `Maps/csv/` |
-| `{state}_villages.csv` | `Maps/csv/` |
-| `{state}_urban.geojson` | `Maps/Geojson/` |
+| `{state}_districts.csv` | `csv/` |
+| `{state}_subdistricts.csv` | `csv/` |
+| `{state}_villages.csv` | `csv/` |
+| `{state}_urban.geojson` | `Geojson/` |
 
 ---
 
 ## Folder structure
 
 ```
-Maps/
-├── scripts/
-│   ├── map_exporter.py       Download boundaries from NIC ArcGIS REST API
-│   ├── map_transformer.py    Enrich, classify, and export as CSV
-│   └── Tests/
-│       └── map_edit.ipynb    Exploratory notebook
-├── Geojson/
-│   └── Examples/             Sample outputs for Odisha
-└── csv/                      Created on first transformer run
+contrib/india/maps/
+├── map_exporter.py       Download boundaries from NIC ArcGIS REST API
+├── map_transformer.py    Enrich, classify, and export as CSV
+├── Geojson/              Created by map_exporter on first run
+└── csv/                  Created by map_transformer on first run
 ```
 
 ---

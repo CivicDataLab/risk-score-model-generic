@@ -60,7 +60,7 @@ topsis.columns = [col.lower().replace('_', '-').replace(' ', '-') for col in top
 topsis.to_csv(os.getcwd()+'/data/risk_score.csv', index=False)
 
 ## DISTRICT LEVEL SCORES
-dist_ids = pd.read_csv(os.getcwd()+'/assets/district_objectid.csv')
+dist_ids = pd.read_csv(os.getcwd()+'/data/district_objectid.csv')
 
 compositescorelabels = ['1','2','3','4','5']
 

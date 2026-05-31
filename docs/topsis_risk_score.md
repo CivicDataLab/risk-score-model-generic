@@ -174,7 +174,7 @@ All four must be present, either merged or loadable from separate files:
 
 ### District ID Lookup
 
-**File:** `assets/district_objectid.csv`
+**File:** `data/district_objectid.csv`
 
 Required for joining district-level aggregations to geographic IDs. Must contain:
 
@@ -224,7 +224,7 @@ All settings are in `config/topsis_config.toml`. No Python edits are needed.
 |---------|----------------|-------------|
 | Factor weights | `topsis_config.toml` → `[weights]` | `flood_hazard`, `exposure`, `vulnerability`, `government_response` |
 | Number of risk classes | `topsis_config.toml` → `classification.n_bins` | Integer (default `5`) |
-| District lookup | `assets/district_objectid.csv` | Replace with local district-to-ID mapping |
+| District lookup | `data/district_objectid.csv` | Replace with local district-to-ID mapping |
 | Indicator columns and aggregation | `topsis_config.toml` → `[indicators]` | Remove rows for columns absent in your data; add new rows for additional columns |
 | Output rounding | `topsis_config.toml` → `[rounding]` | Column name → decimal places |
 | Fiscal year logic (response score) | `govtresponse_config.toml` → `fiscal_year.start_month` | Month number when fiscal year starts (default `4` for April) |

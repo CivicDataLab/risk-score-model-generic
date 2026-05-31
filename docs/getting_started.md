@@ -112,7 +112,7 @@ See [score_vulnerability.md](./score_vulnerability.md) for alternative data sour
 
 ### District ID Lookup
 
-**`assets/district_objectid.csv`**
+**`data/district_objectid.csv`**
 
 Maps district names to the platform's geographic IDs. Required by the TOPSIS script for district-level aggregation. Must contain:
 
@@ -181,7 +181,7 @@ Always review this first. It sets the shared paths and column names used by ever
 |---------|---------|-------------|
 | `weights.*` | hazard=4, exposure=1, vulnerability=2, response=2 | You want to re-weight factors based on local context or policy |
 | `classification.n_bins` | `5` | You want a different number of output risk classes |
-| `paths.district_lookup_file` | `assets/district_objectid.csv` | You replace the district ID lookup |
+| `paths.district_lookup_file` | `data/district_objectid.csv` | You replace the district ID lookup |
 | `[indicators]` | 70+ India-specific columns with aggregation rules | Remove rows for columns absent in your data |
 | `[rounding]` | Per-column decimal precision | You want different output rounding |
 

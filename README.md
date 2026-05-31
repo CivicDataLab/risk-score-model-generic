@@ -37,10 +37,10 @@ By producing transparent, reproducible risk scores at granular administrative le
 risk-score-model-generic/
 ├── scripts/             Factor and aggregation scripts
 ├── config/              TOML configuration files
-├── data/                Sample inputs and outputs
-├── assets/              Lookup tables and map boundary tooling
-│   └── Maps/            map_exporter.py + map_transformer.py + GeoJSON examples
+├── data/                Sample inputs and outputs (incl. district lookup)
 ├── docs/                Methodology documentation
+├── contrib/             Region-specific tooling
+│   └── india/maps/      India admin-boundary download and transformation scripts
 │
 ├── CITATION.cff         Citation metadata
 ├── LICENSE              GNU AGPL v3.0
@@ -145,7 +145,7 @@ Adapting the model to a new geography is mostly a matter of editing these TOMLs 
 | [`score_vulnerability.md`](docs/score_vulnerability.md) | Vulnerability methodology (DEA) |
 | [`score_government_response.md`](docs/score_government_response.md) | Government Response methodology |
 | [`topsis_risk_score.md`](docs/topsis_risk_score.md) | TOPSIS composite score and final output |
-| [`assets/Maps/scripts/`](assets/Maps/scripts/) | admin-boundary download and transformation tooling for India |
+| [`contrib/india/maps/`](contrib/india/maps/) | admin-boundary download and transformation tooling for India |
 
 ---
 
