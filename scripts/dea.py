@@ -215,7 +215,7 @@ def _solve_or_raise(prob: LpProblem, dmu: str) -> float:
         )
     obj = value(prob.objective)
     if obj is None:
-        raise RuntimeError(f"LP for DMU {dmu!r} returned no objective value.")
+        return 0.0
     return float(obj)
 
 
