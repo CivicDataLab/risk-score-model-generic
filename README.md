@@ -35,18 +35,27 @@ By producing transparent, reproducible risk scores at granular administrative le
 
 ```
 risk-score-model-generic/
-├── scripts/             Factor and aggregation scripts
-├── config/              TOML configuration files
-├── data/                Sample inputs and outputs (incl. district lookup)
+├── scripts/             Factor and aggregation scripts (+ synthetic data generator)
+├── config/              Generic, geography-neutral TOML configuration
+├── data/                Synthetic sample input + district lookup; pipeline outputs
+├── tests/               Automated tests (pytest)
 ├── docs/                Methodology documentation
-├── contrib/             Region-specific tooling
-│   └── india/maps/      India admin-boundary download and transformation scripts
+├── contrib/             Region-specific tooling and examples
+│   └── india/
+│       ├── maps/        India admin-boundary download and transformation scripts
+│       └── example/     India (Assam) reference configuration and dataset
 │
 ├── CITATION.cff         Citation metadata
 ├── LICENSE              GNU AGPL v3.0
 ├── README.md
-└── requirements.txt     Python dependencies
+├── requirements.txt     Python runtime dependencies
+└── requirements-dev.txt Development/test dependencies
 ```
+
+The `config/` and `data/` at the root are **geography-neutral**: the bundled sample
+is synthetic so the model runs out of the box on any machine. A complete real-world
+configuration — the deployment the model was built for — lives under
+[`contrib/india/example/`](contrib/india/example/).
 
 This repository covers the **modelling layer** only. Data acquisition is handled by a companion repository — see [Data inputs](#data-inputs-and-the-flood-data-ecosystem) below.
 
@@ -76,7 +85,7 @@ flowchart LR
     V --> T
     G --> T
 
-    T --> O[risk_score_final_district.csv]
+    T --> O[risk_score_district.csv]
 ```
 
 The four **factor scripts** (`hazard.py`, `exposure.py`, `vulnerability.py`, `govtresponse.py`) are independent and can run in any order. The **TOPSIS script** then combines their outputs into a single composite risk score weighted by hazard, exposure, vulnerability, and government response.
@@ -112,9 +121,21 @@ python scripts/govtresponse.py
 python scripts/topsis_riskscore.py
 ```
 
-Each script reads `data/MASTER_VARIABLES.csv` (or the file named in your config) and writes a CSV under `data/`. The final composite is `risk_score_final_district.csv`.
+Each script reads `data/MASTER_VARIABLES.csv` (or the file named in your config) and writes a CSV under `data/`. The final composite is `data/risk_score_district.csv`.
 
-To adapt the model to a new geography, follow [`docs/getting_started.md`](docs/getting_started.md).
+The synthetic sample is committed, so the scripts run as-is. To regenerate it (it is deterministic), run:
+
+```bash
+python scripts/generate_sample_data.py
+```
+
+To run the bundled **India (Assam) reference example** instead of the synthetic sample, point the config-directory environment variable at it:
+
+```bash
+RISK_MODEL_CONFIG_DIR=contrib/india/example/config python scripts/hazard.py   # …and the rest
+```
+
+See [`contrib/india/example/`](contrib/india/example/) for details. To adapt the model to a new geography, follow [`docs/getting_started.md`](docs/getting_started.md).
 
 ---
 
@@ -145,6 +166,8 @@ Adapting the model to a new geography is mostly a matter of editing these TOMLs 
 | [`score_vulnerability.md`](docs/score_vulnerability.md) | Vulnerability methodology (DEA) |
 | [`score_government_response.md`](docs/score_government_response.md) | Government Response methodology |
 | [`topsis_risk_score.md`](docs/topsis_risk_score.md) | TOPSIS composite score and final output |
+| [`dpg.md`](docs/dpg.md) | How the project maps to the Digital Public Goods Standard |
+| [`contrib/india/example/`](contrib/india/example/) | India (Assam) reference configuration and dataset |
 | [`contrib/india/maps/`](contrib/india/maps/) | admin-boundary download and transformation tooling for India |
 
 ---
@@ -153,13 +176,13 @@ Adapting the model to a new geography is mostly a matter of editing these TOMLs 
 
 The model consumes a single tabular file (`MASTER_VARIABLES.csv`) — one row per geographic unit per month. Each row carries the variables needed by the four factor scripts (rainfall, inundation, population, infrastructure, damages, expenditure).
 
-The acquisition, cleaning, and joining of those variables is handled by a companion repository:
+The acquisition, cleaning, and joining of those variables is geography-specific. For the original India deployment it is handled by a companion repository:
 
 ➡️ **[CivicDataLab/flood-data-ecosystem-generic](https://github.com/CivicDataLab/flood-data-ecosystem-generic)**
 
-That repository contains per-source extractors for the Indian Meteorological Department (IMD), ISRO Bhuvan, WorldPop, NASADEM, Mission Antyodaya, BharatMaps, WRIS, and government tender portals. Its output is the master CSV that this model consumes.
+That repository contains per-source extractors for the data sources used by the **India example** — the Indian Meteorological Department (IMD), ISRO Bhuvan, WorldPop, NASADEM, Mission Antyodaya, BharatMaps, WRIS, and government tender portals. Its output is a master CSV in the shape this model consumes. Adopters in other geographies supply their own equivalent sources; the model itself is agnostic to where the variables come from.
 
-For testing and demonstration, this repository ships with a small sample dataset in `data/` so the model can be run end-to-end without first running the data pipeline.
+For testing and demonstration, this repository ships with a small **synthetic** sample dataset in `data/` (generated by `scripts/generate_sample_data.py`) so the model can be run end-to-end without any real data pipeline. A real-world Assam dataset is available under [`contrib/india/example/`](contrib/india/example/).
 
 ---
 

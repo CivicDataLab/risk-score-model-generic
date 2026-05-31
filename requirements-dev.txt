@@ -1,0 +1,4 @@
+# Development and test dependencies.
+# Installs the runtime requirements plus tooling used by the test suite and CI.
+-r requirements.txt
+pytest==8.3.3
