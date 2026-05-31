@@ -43,15 +43,13 @@ def main():
     rounding_rules = cfg["rounding"]
 
     data_dir = os.path.join(_RISKMODEL_DIR, cfg["paths"]["data_folder"])
-    assets_dir = os.path.join(_RISKMODEL_DIR)
 
-    factor_files = glob.glob(os.path.join(_RISKMODEL_DIR, "data", "factor_scores_l1*.csv"))
+    factor_files = glob.glob(os.path.join(data_dir, "factor_scores_l1*.csv"))
 
     factors = ["exposure", "flood-hazard", "vulnerability", "government-response"]
-    additional_columns = [
-        "financial_year", "efficiency", "flood-hazard-float",
-        "total_tenders_hist", "SDRF_sanctions_hist", "other_tenders_hist",
-    ]
+    # Extra per-unit columns to carry through from the factor files (only those
+    # actually present are kept), used downstream for display/diagnostics.
+    additional_columns = ["financial_year", "efficiency", "flood-hazard-float"]
 
     merged_df = pd.read_csv(factor_files[0])
     for path in factor_files[1:]:
@@ -153,10 +151,16 @@ def main():
     final = pd.concat([topsis_result, dist], ignore_index=True)
 
     final = apply_rounding_rules(final, rounding_rules)
-    final["inundation-pct"] = final["inundation-pct"] * 100
-    final["total-infrastructure-damage"] = (
-        final["total-house-fully-damaged"] + final["roads"] + final["bridge"]
-    )
+
+    # Optional display-oriented derivations. These run only when the relevant
+    # input columns are present, so geographies without them are unaffected.
+    if "inundation-pct" in final.columns:
+        final["inundation-pct"] = final["inundation-pct"] * 100
+    damage_components = ["total-house-fully-damaged", "roads", "bridge"]
+    if all(c in final.columns for c in damage_components):
+        final["total-infrastructure-damage"] = final[damage_components].sum(axis=1)
+
+    # Optional column renames; pandas silently ignores names not present.
     final.rename(
         columns={
             "preparedness-measures-tenders-awarded-value": "restoration-measures-tenders-awarded-value",

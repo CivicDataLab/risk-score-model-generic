@@ -3,13 +3,11 @@
 
 [paths]
 # Path to the data folder, relative to the repository root.
-data_folder = "data"
+# This is the India (Assam) reference example; its data lives under contrib/.
+data_folder = "contrib/india/example/data"
 input_file  = "MASTER_VARIABLES.csv"
 
 [columns]
 # Column names in MASTER_VARIABLES.csv that every script requires.
-# object_id is any stable, unique identifier for a geographic unit (it need not
-# follow any national coding scheme). district is the parent unit used for
-# district-level aggregation in the TOPSIS step.
 time_column     = "timeperiod"
 object_id_column = "object_id"

@@ -107,9 +107,9 @@ The composite score is binned using mean (μ) and standard deviation (σ), but w
 
 | Column | Description | Minimum Requirement |
 |--------|-------------|---------------------|
-| `total_tender_awarded_value` | Total value of all flood-related contracts awarded | Any measure of total disaster-related procurement spending |
-| `SDRF_sanctions_awarded_value` | Value of SDRF (State Disaster Response Fund) sanctions | Disaster fund disbursements or equivalent earmarked spending |
-| `SDRF_tenders_awarded_value` | Value of contracts funded via SDRF scheme | Scheme-specific procurement values (optional; can be omitted) |
+| `total_procurement_value` | Total value of all flood-related contracts awarded | Any measure of total disaster-related procurement spending |
+| `disaster_fund_sanctions_value` | Value of disaster-fund sanctions | Disaster fund disbursements or equivalent earmarked spending |
+| `disaster_fund_procurement_value` | Value of contracts funded via a disaster-fund scheme | Scheme-specific procurement values (optional; can be omitted) |
 
 **Minimum viable configuration:** A single variable representing total government flood expenditure is sufficient. The model works with any combination of monetary spending variables.
 

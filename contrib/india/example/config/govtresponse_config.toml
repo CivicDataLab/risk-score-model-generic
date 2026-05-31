@@ -6,19 +6,17 @@
 [inputs]
 # Monetary expenditure/procurement columns. Minimum 1 required.
 # Financial-year cumulative sums are computed automatically before scoring.
-# These are generic placeholders — rename them to match your data, e.g. a
-# disaster relief fund or a national/regional disaster-response scheme.
 variables = [
-    "total_procurement_value",
-    "disaster_fund_sanctions_value",
-    "disaster_fund_procurement_value",
+    "total_tender_awarded_value",
+    "SDRF_sanctions_awarded_value",
+    "SDRF_tenders_awarded_value",
 ]
 
 [fiscal_year]
 # Month number on which the fiscal year starts (1 = January, 4 = April, 7 = July …).
-# Default is 1 (calendar year). Set this to match your jurisdiction's fiscal calendar
-# (for example, the India reference example under contrib/india uses 4 = April).
-start_month = 1
+# Default is 4 (April–March, Indian fiscal calendar).
+# Update this if the target geography uses a different fiscal year convention.
+start_month = 4
 
 [classification]
 # Inverted labels: low spending maps to class 5 (weakest), high spending to class 1 (strongest).

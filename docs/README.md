@@ -10,9 +10,10 @@ The model takes a master dataset of spatial variables (one row per geographic un
 
 ```
 risk-score-model-generic/
-├── config/         ← configurable thresholds and variable lists
-├── data/           ← MASTER_VARIABLES.csv input + output CSVs
+├── config/         ← configurable thresholds and variable lists (geography-neutral)
+├── data/           ← synthetic MASTER_VARIABLES.csv input + output CSVs
 ├── scripts/        ← scoring computation scripts
+├── contrib/india/  ← India-specific tooling and the Assam reference example
 └── docs/           ← THIS DIRECTORY — methodology documentation
 ```
 
@@ -43,13 +44,20 @@ flowchart TD
     subgraph TOPSIS["TOPSIS Aggregation"]
         F[topsis_riskscore.py\nWeighted TOPSIS per month] --> G[risk_score.csv\nBlock-level risk score]
         G --> H[District aggregation\n+ indicator rollup]
-        H --> I[risk_score_final_district.csv\nPlatform-ready output]
+        H --> I[risk_score_district.csv\nPlatform-ready output]
     end
 ```
 
 ---
 
 ## Document Index
+
+Start here:
+
+- [getting_started.md](./getting_started.md) — end-to-end guide for adapting the model to a new geography
+- [dpg.md](./dpg.md) — mapping to the Digital Public Goods Standard
+
+Per-factor methodology:
 
 | File | Score | Method | Script |
 |------|-------|--------|--------|
@@ -71,7 +79,7 @@ All factor score scripts read from a single master CSV:
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `object_id` | Integer | Unique identifier for geographic unit (block/sub-district) |
+| `object_id` | String | Stable unique identifier for a geographic unit (any scheme; need not be numeric) |
 | `timeperiod` | String | Month in `YYYY_MM` format |
 | `district` | String | Parent administrative district name |
 | *(factor-specific variables)* | Float | See individual score docs |
@@ -91,4 +99,4 @@ All factor score scripts read from a single master CSV:
 | `factor_scores_l1_vulnerability.csv` | Master variables + `vulnerability` (1–5) + `efficiency` |
 | `factor_scores_l1_government-response.csv` | Master variables + `government-response` (1–5) |
 | `risk_score.csv` | All factor scores + `TOPSIS_Score` + `risk-score` (1–5), block level |
-| `risk_score_final_district.csv` | Block rows + district summary rows; platform-ready for IDS-DRR |
+| `risk_score_district.csv` | Block rows + district summary rows; platform-ready for IDS-DRR |

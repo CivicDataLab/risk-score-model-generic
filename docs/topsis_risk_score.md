@@ -5,7 +5,7 @@
 **Input:** All four `factor_scores_l1_*.csv` files (merged)
 **Outputs:**
 - `data/risk_score.csv` — block-level risk score
-- `data/risk_score_final_district.csv` — platform-ready output (blocks + district summaries)
+- `data/risk_score_district.csv` — platform-ready output (blocks + district summaries)
 
 ---
 
@@ -57,7 +57,7 @@ flowchart TD
         DA4[Concat district rows\nwith block rows] --> FIN
     end
 
-    FIN[risk_score_final_district.csv\nBoth block-level and district-level rows]
+    FIN[risk_score_district.csv\nBoth block-level and district-level rows]
 ```
 
 ---
@@ -99,7 +99,11 @@ Default weights:
 | `government-response` | **2** | Response capacity mitigates risk |
 | `exposure` | **1** | Population at risk; context factor |
 
-> Weights are set as integer literals in `topsis_riskscore.py` (`fldhzd_w`, `exp_w`, `vul_w`, `resp_w`). The weightages are defined using the document “Disaster Risk and Resilience in India” drafted by the Ministry of Home Affairs and UNDP. 
+> Weights are configured in the `[weights]` section of `config/topsis_config.toml`
+> (`flood_hazard`, `exposure`, `vulnerability`, `government_response`) and can be
+> changed without editing any code. The default weighting follows the document
+> “Disaster Risk and Resilience in India” drafted by the Ministry of Home Affairs
+> and UNDP; adjust it to reflect local context or policy.
 
 ### Step 4 — Ideal Solutions
 
@@ -152,7 +156,7 @@ After block-level scoring, district-level summaries are computed by grouping on 
 | TOPSIS score | `mean` |
 | Risk score | `mean` then re-binned with `pd.cut` |
 
-District rows are concatenated with the original block rows into a single file. Rows are distinguished by whether the `district` field matches the `block_name` field (district rows have them equal, block rows have a specific block name).
+District-level rows are concatenated below the original block-level rows into a single file. Block rows carry a unit-level `object-id`; the appended district-summary rows carry only the district name and the district-level lookup id.
 
 ---
 
@@ -204,7 +208,7 @@ Contains all merged factor score data plus:
 
 All column names are lowercased and hyphenated (`snake_case` → `kebab-case`).
 
-### `risk_score_final_district.csv` (Platform output)
+### `risk_score_district.csv` (Platform output)
 
 Contains both block-level rows and district-level summary rows, with:
 

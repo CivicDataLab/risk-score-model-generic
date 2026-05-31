@@ -19,7 +19,7 @@ flowchart TD
 
     B1 & C1 & D1 & E1 --> F[topsis_riskscore.py]
 
-    F --> G([risk_score_final_district.csv\nComposite risk score — block and district level])
+    F --> G([risk_score_district.csv\nComposite risk score — block and district level])
 ```
 
 The four factor scripts are independent of each other and can run in any order. The TOPSIS script must run after all four have completed.
@@ -40,7 +40,7 @@ One row per geographic unit per month. The following columns are required by eve
 | `timeperiod` | String (`YYYY_MM`) | Month identifier, e.g. `2022_07` |
 | `district` | String | Parent district name for each unit |
 
-Note: In India, 'object_id' is derived from the LGD code system, and in the format 'AA-BBB-CCCCC' where "AA" is an integer ID corresponding to administrative level 1 (State), "BBB" corresponds to admin level 2 (district) and 'CCCCC' corresponds to a 5 digit integer ID corresponding to admin level 3 (subdistrict). 
+Note: `object_id` can be any stable, unique identifier for a geographic unit — it does not need to follow any national coding scheme. The only requirements are that it is unique per unit and consistent across all input files and time periods. (For an example of a national scheme, the India reference example derives `object_id` from the LGD code system in the format `AA-BBB-CCCCC` — state, district, subdistrict; see [`contrib/india/example/`](../contrib/india/example/).)
 
 In addition, each factor score requires its own input variables. The table below shows the default variables and the minimum viable set for each factor:
 
@@ -80,10 +80,10 @@ Requires two groups of variables:
 | `road_length` | Road length per administrative unit |
 | `net_sown_area_in_hac` | Agricultural sown area |
 | `avg_electricity` | Electricity access score (0–1) |
-| `rc_piped_hhds_pct` | Percentage of households with piped water |
-| `rc_nosanitation_hhds_pct` | Percentage of households without sanitation |
+| `piped_water_hhds_pct` | Percentage of households with piped water |
+| `no_sanitation_hhds_pct` | Percentage of households without sanitation |
 | `sum_aged_population` | Elderly population per administrative unit |
-| `Embankment breached` | Flood protection failures per administrative unit |
+| `flood_protection_failures` | Failures of flood-protection structures per administrative unit |
 
 **Damage outputs** (observed flood impacts):
 
@@ -92,7 +92,7 @@ Requires two groups of variables:
 | `Human_Live_Lost` | Deaths per capita |
 | `Population_affected_Total` | Affected population per capita |
 | `Crop_Area` | Damaged crop area / total sown area |
-| `Embankments affected` | Embankment damage per km² |
+| `flood_protection_damaged` | Damage to flood-protection structures per km² |
 | `Roads` | Road damage per km² |
 | `Bridge` | Bridge damage per km² |
 
@@ -104,11 +104,11 @@ See [score_vulnerability.md](./score_vulnerability.md) for alternative data sour
 
 | Column | Description | Min. requirement |
 |--------|-------------|-----------------|
-| `total_tender_awarded_value` | Total value of all flood-related contracts awarded | Any measure of total disaster-related procurement |
-| `SDRF_sanctions_awarded_value` | Value of disaster fund sanctions | Disaster fund disbursements or equivalent |
-| `SDRF_tenders_awarded_value` | Value of scheme-specific contracts | Optional; can be omitted |
+| `total_procurement_value` | Total value of all flood-related contracts awarded | Any measure of total disaster-related procurement |
+| `disaster_fund_sanctions_value` | Value of disaster-fund sanctions | Disaster-fund disbursements or equivalent |
+| `disaster_fund_procurement_value` | Value of scheme-specific contracts | Optional; can be omitted |
 
-**Minimum viable:** 1 variable representing total government flood expenditure. See [score_government_response.md](./score_government_response.md) for alternative data sources including OCDS-format procurement data.
+**Minimum viable:** 1 variable representing total government flood expenditure. See [score_government_response.md](./score_government_response.md) for alternative data sources including OCDS-format procurement data. (These generic column names are placeholders — the India example uses scheme-specific names such as `SDRF_sanctions_awarded_value`.)
 
 ### District ID Lookup
 
@@ -161,8 +161,8 @@ Always review this first. It sets the shared paths and column names used by ever
 | `inputs.damage_vars` | 6 flood damage columns | You have different damage variables (or none — see note below) |
 | `inputs.inverted_inputs` | 6 resilience variables | You change condition_vars — update which variables are inverted |
 | `inputs.neg_inputs` | 3 negative-polarity variables | You change condition_vars |
-| `normalisation.per_capita` | 4 variables ÷ population | Update denominators to match your data |
-| `normalisation.per_area` | 11 variables ÷ area | Update denominators to match your data |
+| `normalisation.per_capita` | 2 variables ÷ `sum_population` | Update denominators to match your data |
+| `normalisation.per_area` | 11 variables ÷ `area_sqkm` | Update denominators to match your data |
 | `classification.n_classes` | `5` | You want a different number of vulnerability classes |
 | `classification.damage_threshold` | `0.0001` | You want to change the damage significance threshold |
 
@@ -172,8 +172,8 @@ Always review this first. It sets the shared paths and column names used by ever
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
-| `inputs.variables` | 3 tender/SDRF columns | You have different expenditure columns (min: 1) |
-| `fiscal_year.start_month` | `4` (April) | Your geography uses a different fiscal year calendar |
+| `inputs.variables` | 3 generic procurement/fund columns | You have different expenditure columns (min: 1) |
+| `fiscal_year.start_month` | `1` (January / calendar year) | Your geography uses a different fiscal year calendar (the India example uses `4`) |
 
 ### `config/topsis_config.toml`
 
@@ -182,14 +182,24 @@ Always review this first. It sets the shared paths and column names used by ever
 | `weights.*` | hazard=4, exposure=1, vulnerability=2, response=2 | You want to re-weight factors based on local context or policy |
 | `classification.n_bins` | `5` | You want a different number of output risk classes |
 | `paths.district_lookup_file` | `data/district_objectid.csv` | You replace the district ID lookup |
-| `[indicators]` | 70+ India-specific columns with aggregation rules | Remove rows for columns absent in your data |
+| `[indicators]` | Generic columns with aggregation rules | Add/remove rows to match the columns in your data (missing ones are ignored) |
 | `[rounding]` | Per-column decimal precision | You want different output rounding |
 
 ---
 
 ## Step 3 — Run the Scripts
 
-All scripts should be run from the repository root. The four factor scripts are independent and can run in any order (or in parallel):
+All scripts should be run from the repository root. By default the scripts read
+their configuration from `config/`. To run an alternative config set without
+editing the defaults — for example the bundled India reference example — set the
+`RISK_MODEL_CONFIG_DIR` environment variable to the directory containing your
+config files:
+
+```bash
+export RISK_MODEL_CONFIG_DIR=contrib/india/example/config   # optional
+```
+
+The four factor scripts are independent and can run in any order (or in parallel):
 
 ```bash
 python scripts/hazard.py
@@ -217,7 +227,7 @@ After running all scripts, the following files should be present in `data/`:
 | `factor_scores_l1_vulnerability.csv` | `vulnerability` column present; values in range 1–5; `efficiency` column in range 0–1 |
 | `factor_scores_l1_government-response.csv` | `government-response` column present; values in range 1–5 |
 | `risk_score.csv` | `risk-score` and `TOPSIS_Score` columns present; no missing values |
-| `risk_score_final_district.csv` | Contains both block-level and district-level rows; district rows have matching `district` and `block_name` fields |
+| `risk_score_district.csv` | Contains both block-level and district-level rows |
 
 The hazard script also saves a diagnostic plot (`data/hazard_distribution.png`) showing the class distribution — a roughly decreasing distribution (more low-risk units than high-risk) is expected.
 
