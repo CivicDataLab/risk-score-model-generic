@@ -9,7 +9,32 @@ import pandas as pd
 
 from config.loader import load_config
 from scripts.common import RISKMODEL_DIR
-from scripts.topsis import Topsis
+
+
+def topsis(evaluation_matrix, weight_matrix):
+    """Score alternatives by TOPSIS closeness to the worst condition.
+
+    Given an m-alternatives x n-criteria evaluation matrix and criteria weights,
+    returns the closeness of each alternative to the worst condition, used as the
+    composite score by the risk-score pipeline. All criteria are benefit criteria
+    (higher is better), so the best condition is the column max and the worst is
+    the column min.
+    """
+    evaluation_matrix = np.array(evaluation_matrix, dtype="float")
+
+    weights = np.array(weight_matrix, dtype="float")
+    weights = weights / weights.sum()
+
+    # Normalise column-wise (L2 norm), then weight.
+    normalized = evaluation_matrix / np.sqrt((evaluation_matrix**2).sum(axis=0))
+    weighted = normalized * weights
+
+    # L2 distance of each alternative to the best and worst conditions.
+    best_distance = np.sqrt(((weighted - weighted.max(axis=0)) ** 2).sum(axis=1))
+    worst_distance = np.sqrt(((weighted - weighted.min(axis=0)) ** 2).sum(axis=1))
+
+    with np.errstate(all="ignore"):
+        return worst_distance / (worst_distance + best_distance)
 
 
 def _kebab(col):
@@ -93,12 +118,9 @@ def main():
         evaluation_matrix = np.array(
             df_month[["flood-hazard", "exposure", "vulnerability", "government-response"]].values
         )
-        criterias = [True, True, True, True]
 
-        t = Topsis(evaluation_matrix, weights, criterias)
-        t.calc()
         df_month = df_month.copy()
-        df_month["topsis_score"] = t.worst_similarity
+        df_month["topsis_score"] = topsis(evaluation_matrix, weights)
         df_month = df_month.sort_values(by="topsis_score", ascending=False)
 
         compscore = pd.cut(
