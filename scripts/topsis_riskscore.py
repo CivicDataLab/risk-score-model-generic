@@ -8,10 +8,8 @@ import numpy as np
 import pandas as pd
 
 from config.loader import load_config
+from scripts.common import RISKMODEL_DIR
 from scripts.topsis import Topsis
-
-
-_RISKMODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _kebab(col):
@@ -54,7 +52,7 @@ def main():
     aggregation_rules = cfg["indicators"]
     rounding_rules = cfg["rounding"]
 
-    data_dir = os.path.join(_RISKMODEL_DIR, cfg["paths"]["data_folder"])
+    data_dir = os.path.join(RISKMODEL_DIR, cfg["paths"]["data_folder"])
 
     factor_files = glob.glob(os.path.join(data_dir, "factor_scores_l1*.csv"))
 
@@ -82,7 +80,7 @@ def main():
                 [object_id_col, "financial_year"]
             )[var].cumsum()
 
-    dist_ids = pd.read_csv(os.path.join(_RISKMODEL_DIR, cfg["paths"]["district_lookup_file"]))
+    dist_ids = pd.read_csv(os.path.join(RISKMODEL_DIR, cfg["paths"]["district_lookup_file"]))
     # Match the kebab-case naming applied to the block-level result below, so the
     # district lookup id lands in the same column as the block-level object id
     # rather than a separate snake_case column after the final concat.
@@ -114,7 +112,7 @@ def main():
     topsis_result.columns = [_kebab(col) for col in topsis_result.columns]
 
     topsis_result.to_csv(
-        os.path.join(_RISKMODEL_DIR, cfg["paths"]["output_file"]), index=False
+        os.path.join(RISKMODEL_DIR, cfg["paths"]["output_file"]), index=False
     )
 
     dist_vul = _district_factor_score(
@@ -190,7 +188,7 @@ def main():
     final.rename(columns=cfg.get("renames", {}), inplace=True)
 
     final.to_csv(
-        os.path.join(_RISKMODEL_DIR, cfg["paths"]["final_output_file"]), index=False
+        os.path.join(RISKMODEL_DIR, cfg["paths"]["final_output_file"]), index=False
     )
     print("Risk score computation complete.")
 

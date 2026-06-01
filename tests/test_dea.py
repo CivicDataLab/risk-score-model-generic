@@ -5,10 +5,6 @@ theoretical relationships between the CRS and VRS models and between their
 primal (multiplier) and dual (envelopment) forms.
 """
 
-import csv
-import os
-import tempfile
-
 import pytest
 
 import scripts.dea as dea
@@ -86,34 +82,3 @@ def test_all_zero_output_dmu_is_inefficient():
     res = dea.CRS(dmus, x, y, "input", dual=False)
     eff = dict(zip(res["DMU"], res["efficiency"]))
     assert eff["B"] == pytest.approx(0.0, abs=TOL)
-
-
-def test_csv2dict_round_trips():
-    with tempfile.NamedTemporaryFile("w", newline="", suffix=".csv",
-                                     delete=False) as fh:
-        csv_path = fh.name
-        w = csv.writer(fh)
-        w.writerow(["DMU", "X1", "X2", "Y1"])
-        for d in DMUS:
-            w.writerow([d, X[d][0], X[d][1], Y[d][0]])
-    try:
-        d2, x2, y2 = dea.csv2dict(csv_path, in_range=[2, 3], out_range=[4, 4])
-        assert d2 == DMUS
-        assert x2 == X
-        assert y2 == Y
-    finally:
-        os.unlink(csv_path)
-
-
-def test_csv2dict_rejects_zero_based_indices():
-    with tempfile.NamedTemporaryFile("w", newline="", suffix=".csv",
-                                     delete=False) as fh:
-        csv_path = fh.name
-        w = csv.writer(fh)
-        w.writerow(["DMU", "X1", "X2", "Y1"])
-        w.writerow(["A", 1.0, 2.0, 1.0])
-    try:
-        with pytest.raises(ValueError):
-            dea.csv2dict(csv_path, in_range=[0, 1], out_range=[3, 3])
-    finally:
-        os.unlink(csv_path)

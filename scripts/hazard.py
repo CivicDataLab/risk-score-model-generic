@@ -1,6 +1,5 @@
 import os
 import sys
-import warnings
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
@@ -8,13 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from tqdm import tqdm
 
 from config.loader import load_config
-
-warnings.filterwarnings("ignore")
-
-_RISKMODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from scripts.common import load_master, merge_and_save, score_by_month
 
 
 def calculate_hazard_scores(df, cfg):
@@ -118,36 +113,35 @@ def main():
     cfg = load_config("hazard_config")
 
     hazard_vars = cfg["inputs"]["variables"]
+    float_col = cfg["output"]["float_column"]
+    class_col = cfg["output"]["class_column"]
     time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
-    data_path = os.path.join(_RISKMODEL_DIR, cfg["paths"]["data_folder"])
 
-    master_variables = pd.read_csv(os.path.join(data_path, cfg["paths"]["input_file"]))
+    master, data_path = load_master(cfg)
 
-    print_variable_statistics(master_variables, hazard_vars)
+    print_variable_statistics(master, hazard_vars)
 
-    results = []
-    for month in tqdm(master_variables[time_col].unique()):
-        month_data = master_variables[
-            master_variables[time_col] == month
-        ][hazard_vars + [time_col, object_id_col]].copy()
-        results.append(calculate_hazard_scores(month_data, cfg))
+    scored = score_by_month(
+        master, hazard_vars, time_col, object_id_col,
+        lambda d: calculate_hazard_scores(d, cfg),
+    )
+    master = merge_and_save(
+        master, scored, [time_col, object_id_col], [class_col, float_col],
+        os.path.join(data_path, cfg["output"]["file"]),
+    )
 
-    hazard_scores = pd.concat(results)
-    master_variables = master_variables.merge(hazard_scores, on=[time_col, object_id_col])
-
-    is_valid = validate_hazard_distribution(master_variables, cfg)
+    is_valid = validate_hazard_distribution(master, cfg)
     if is_valid:
         print("\nHazard distribution passes all validation checks!")
     else:
         print("\nWarning: Some validation checks failed. Please review the distribution.")
 
     plot_hazard_distribution(
-        master_variables, cfg,
+        master, cfg,
         os.path.join(data_path, cfg["output"]["plot_file"]),
     )
 
-    master_variables.to_csv(os.path.join(data_path, cfg["output"]["file"]), index=False)
     print("\nResults saved successfully!")
 
 

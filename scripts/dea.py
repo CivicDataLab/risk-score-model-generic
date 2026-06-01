@@ -16,8 +16,6 @@
 
 Public API
 ----------
-csv2dict           Read DMU / input / output data from a single CSV.
-csv2dict_sep       Read input or output data from a separated CSV.
 CRS                Solve the constant-returns-to-scale DEA model.
 VRS                Solve the variable-returns-to-scale DEA model.
 
@@ -38,9 +36,7 @@ identifiers into this routine.
 
 from __future__ import annotations
 
-import csv
 import logging
-from itertools import islice
 from typing import Dict, List, Sequence, Tuple
 
 import pandas as pd
@@ -60,129 +56,6 @@ logger = logging.getLogger(__name__)
 
 # Type aliases for clarity
 DMUData = Dict[str, List[float]]
-
-
-# ---------------------------------------------------------------------------
-# CSV ingestion
-# ---------------------------------------------------------------------------
-
-def csv2dict(
-    dea_data: str,
-    in_range: Sequence[int],
-    out_range: Sequence[int],
-    assign: bool = False,
-) -> Tuple[List[str], DMUData, DMUData]:
-    """Read DMU records from a CSV containing both inputs and outputs.
-
-    The first column of each row must be the DMU identifier. Remaining
-    columns hold numeric input and output values. Column indices are
-    1-based to match the convention of the original module.
-
-    Parameters
-    ----------
-    dea_data : str
-        Path to a CSV file. The first row is treated as a header.
-    in_range : Sequence[int]
-        1-based column indices identifying input columns. When ``assign``
-        is False this is interpreted as an inclusive ``[start, end]``
-        range; when True, as an explicit list of columns.
-    out_range : Sequence[int]
-        1-based column indices for outputs, same semantics as ``in_range``.
-    assign : bool, default False
-        See ``in_range``.
-
-    Returns
-    -------
-    (dmus, x, y) : Tuple[List[str], DMUData, DMUData]
-        ``dmus`` is the ordered list of DMU names; ``x`` and ``y`` map
-        each DMU name to its input and output vectors respectively.
-
-    Raises
-    ------
-    ValueError
-        If any range index is < 1 or if a data cell cannot be parsed as
-        a float.
-    """
-    if not all(v > 0 for v in in_range):
-        raise ValueError("All values in in_range must be >= 1 (1-based).")
-    if not all(v > 0 for v in out_range):
-        raise ValueError("All values in out_range must be >= 1 (1-based).")
-
-    # Convert to 0-based without mutating the caller's lists
-    in_idx = [v - 1 for v in in_range]
-    out_idx = [v - 1 for v in out_range]
-
-    dmus: List[str] = []
-    x: DMUData = {}
-    y: DMUData = {}
-
-    with open(dea_data, newline="", encoding="utf-8") as fh:
-        reader = csv.reader(fh)
-        for row in islice(reader, 1, None):
-            if not row:
-                continue
-            key = row[0].strip()
-            dmus.append(key)
-            try:
-                if assign:
-                    x[key] = [float(row[i]) for i in in_idx]
-                    y[key] = [float(row[i]) for i in out_idx]
-                else:
-                    x[key] = [float(v) for v in row[in_idx[0]:in_idx[1] + 1]]
-                    y[key] = [float(v) for v in row[out_idx[0]:out_idx[1] + 1]]
-            except ValueError as exc:
-                raise ValueError(
-                    f"Non-numeric value in row for DMU {key!r}: {exc}"
-                ) from exc
-
-    return dmus, x, y
-
-
-def csv2dict_sep(
-    dea_data: str,
-    vrange: Sequence[int] = (0, 0),
-    assign: bool = False,
-) -> Tuple[List[str], DMUData]:
-    """Read DMU records from a CSV that holds either inputs or outputs.
-
-    Parameters
-    ----------
-    dea_data : str
-        Path to a CSV file. The first row is treated as a header and the
-        first column of each row holds the DMU identifier.
-    vrange : Sequence[int], default (0, 0)
-        1-based column indices. When ``assign`` is False the argument is
-        ignored and all columns after the DMU name are used; when True,
-        ``vrange`` lists the specific 1-based columns to extract.
-    assign : bool, default False
-        See ``vrange``.
-
-    Returns
-    -------
-    (dmus, values) : Tuple[List[str], DMUData]
-    """
-    v_idx = [v - 1 for v in vrange]
-    dmus: List[str] = []
-    values: DMUData = {}
-
-    with open(dea_data, newline="", encoding="utf-8") as fh:
-        reader = csv.reader(fh)
-        for row in islice(reader, 1, None):
-            if not row:
-                continue
-            key = row[0].strip()
-            dmus.append(key)
-            try:
-                if assign:
-                    values[key] = [float(row[i]) for i in v_idx]
-                else:
-                    values[key] = [float(v) for v in row[1:]]
-            except ValueError as exc:
-                raise ValueError(
-                    f"Non-numeric value in row for DMU {key!r}: {exc}"
-                ) from exc
-
-    return dmus, values
 
 
 # ---------------------------------------------------------------------------
@@ -519,8 +392,6 @@ def VRS(  # noqa: N802 - keep historical capitalisation for API compatibility
 
 
 __all__ = [
-    "csv2dict",
-    "csv2dict_sep",
     "CRS",
     "VRS",
     "crs_input_primal",
