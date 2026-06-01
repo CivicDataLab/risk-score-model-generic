@@ -34,122 +34,124 @@ variables = [
 ]
 
 # District-level indicator columns and their aggregation rules.
-# Keys are post-rename column names (lowercase kebab-case).
+# Keys are snake_case column names (kebab-cased automatically on output).
 # Values are pandas aggregation functions: "sum", "mean", "max", "min", or "first".
 # Remove any row whose column is not present in your data.
 [indicators]
-"total-tender-awarded-value"                          = "sum"
-"sopd-tenders-awarded-value"                          = "sum"
-"sdrf-sanctions-awarded-value"                        = "first"
-"sdrf-tenders-awarded-value"                          = "sum"
-"ridf-tenders-awarded-value"                          = "sum"
-"ltif-tenders-awarded-value"                          = "sum"
-"cidf-tenders-awarded-value"                          = "sum"
-"preparedness-measures-tenders-awarded-value"         = "sum"
-"immediate-measures-tenders-awarded-value"            = "sum"
-"others-tenders-awarded-value"                        = "sum"
-"others-tenders-awarded-value-fy-cumsum"              = "sum"
-"total-tender-awarded-value-fy-cumsum"                = "sum"
-"sdrf-sanctions-awarded-value-fy-cumsum"              = "first"
-"sdrf-tenders-awarded-value-fy-cumsum"                = "sum"
-"preparedness-measures-tenders-awarded-value-fy-cumsum" = "sum"
-"immediate-measures-tenders-awarded-value-fy-cumsum"  = "sum"
-"total-expenditure-value"                             = "sum"
-"immediate-measures-expenditure-value"                = "sum"
-"others-expenditure-value"                            = "sum"
-"sdrf-expenditure-value"                              = "sum"
-"repair-and-restoration-expenditure-value"            = "sum"
-"total-animals-washed-away"                            = "sum"
-"total-animals-affected"                               = "sum"
-"total-houses-fully-damaged"                           = "sum"
-"embankments-affected"                                = "sum"
-"roads-damaged"                                       = "sum"
-"bridges-damaged"                                     = "sum"
-"embankments-breached"                                 = "sum"
-"total-population"                                      = "sum"
-"inundation-intensity-sum"                            = "sum"
-"total-households"                                           = "sum"
-"human-lives-lost"                                     = "sum"
-"elderly-population"                                 = "sum"
-"schools-count"                                       = "sum"
-"health-centres-count"                                = "sum"
-"road-length"                                         = "sum"
-"rail-length"                                         = "sum"
-"sum-rain"                                            = "sum"
-"rc-area"                                             = "sum"
-"young-population"                                = "sum"
-"net-sown-area-ha"                                = "sum"
-"rail-count"                                          = "sum"
-"population-affected-total"                           = "sum"
-"crop-area"                                           = "sum"
-"relief-camps"                                        = "sum"
-"relief-centers"                                      = "sum"
-"relief-inmates"                                      = "sum"
-"rc-no-sanitation-households-pct"                            = "mean"
-"drainage-density"                                    = "mean"
-"inundation-pct"                                      = "mean"
-"inundation-intensity-mean-nonzero"                   = "mean"
-"inundation-intensity-mean"                           = "mean"
-"electricity-access"                                     = "mean"
-"rc-piped-water-households-pct"                                   = "mean"
-"mean-sex-ratio"                                      = "mean"
-"mean-rain"                                           = "mean"
-"elevation-mean"                                      = "mean"
-"mean-ndvi"                                           = "mean"
-"mean-ndbi"                                           = "mean"
-"riverlevel-mean"                                     = "mean"
-"mean-cn"                                             = "mean"
-"slope-mean"                                          = "mean"
-"avg-tele"                                            = "mean"
-"distance-from-river"                                 = "mean"
-"water"                                               = "mean"
-"trees"                                               = "mean"
-"rangeland"                                           = "mean"
-"crops"                                               = "mean"
-"flooded-vegetation"                                  = "mean"
-"built-area"                                          = "mean"
-"bare-ground"                                         = "mean"
-"clouds"                                              = "mean"
-"efficiency"                                          = "mean"
-"topsis-score"                                        = "mean"
-"max-rain"                                            = "max"
-"riverlevel-max"                                      = "max"
-"riverlevel-min"                                      = "min"
-"financial-year"                                      = "first"
+total_tender_awarded_value                            = "sum"
+sopd_tenders_awarded_value                            = "sum"
+sdrf_sanctions_awarded_value                          = "first"
+sdrf_tenders_awarded_value                            = "sum"
+ridf_tenders_awarded_value                            = "sum"
+ltif_tenders_awarded_value                            = "sum"
+cidf_tenders_awarded_value                            = "sum"
+preparedness_measures_tenders_awarded_value           = "sum"
+immediate_measures_tenders_awarded_value              = "sum"
+others_tenders_awarded_value                          = "sum"
+others_tenders_awarded_value_fy_cumsum                = "sum"
+total_tender_awarded_value_fy_cumsum                  = "sum"
+sdrf_sanctions_awarded_value_fy_cumsum                = "first"
+sdrf_tenders_awarded_value_fy_cumsum                  = "sum"
+preparedness_measures_tenders_awarded_value_fy_cumsum = "sum"
+immediate_measures_tenders_awarded_value_fy_cumsum    = "sum"
+total_expenditure_value                               = "sum"
+immediate_measures_expenditure_value                  = "sum"
+others_expenditure_value                              = "sum"
+sdrf_expenditure_value                                = "sum"
+repair_and_restoration_expenditure_value              = "sum"
+total_animals_washed_away                             = "sum"
+total_animals_affected                                = "sum"
+total_houses_fully_damaged                            = "sum"
+embankments_affected                                  = "sum"
+roads_damaged                                         = "sum"
+bridges_damaged                                       = "sum"
+embankments_breached                                  = "sum"
+total_population                                      = "sum"
+inundation_intensity_sum                              = "sum"
+total_households                                      = "sum"
+human_lives_lost                                      = "sum"
+elderly_population                                    = "sum"
+schools_count                                         = "sum"
+health_centres_count                                  = "sum"
+road_length                                           = "sum"
+rail_length                                           = "sum"
+sum_rain                                              = "sum"
+rc_area                                               = "sum"
+young_population                                      = "sum"
+net_sown_area_ha                                      = "sum"
+rail_count                                            = "sum"
+population_affected_total                             = "sum"
+crop_area                                             = "sum"
+relief_camps                                          = "sum"
+relief_centers                                        = "sum"
+relief_inmates                                        = "sum"
+rc_no_sanitation_households_pct                       = "mean"
+drainage_density                                      = "mean"
+inundation_pct                                        = "mean"
+inundation_intensity_mean_nonzero                     = "mean"
+inundation_intensity_mean                             = "mean"
+electricity_access                                    = "mean"
+rc_piped_water_households_pct                         = "mean"
+mean_sex_ratio                                        = "mean"
+mean_rain                                             = "mean"
+elevation_mean                                        = "mean"
+mean_ndvi                                             = "mean"
+mean_ndbi                                             = "mean"
+riverlevel_mean                                       = "mean"
+mean_cn                                               = "mean"
+slope_mean                                            = "mean"
+avg_tele                                              = "mean"
+distance_from_river                                   = "mean"
+water                                                 = "mean"
+trees                                                 = "mean"
+rangeland                                             = "mean"
+crops                                                 = "mean"
+flooded_vegetation                                    = "mean"
+built_area                                            = "mean"
+bare_ground                                           = "mean"
+clouds                                                = "mean"
+efficiency                                            = "mean"
+topsis_score                                          = "mean"
+max_rain                                              = "max"
+riverlevel_max                                        = "max"
+riverlevel_min                                        = "min"
+financial_year                                        = "first"
 
 # Decimal places to round output columns to. Omit a column to leave it unrounded.
+# Keys are snake_case column names (kebab-cased automatically on output).
 [rounding]
-"avg-tele"                          = 1
-"electricity-access"                   = 1
-"mean-sex-ratio"                    = 2
-"inundation-intensity-mean-nonzero" = 2
-"rc-piped-water-households-pct"                 = 2
-"rc-no-sanitation-households-pct"          = 2
-"inundation-intensity-sum"          = 2
-"max-rain"                          = 2
-"mean-rain"                         = 2
-"sum-rain"                          = 2
-"elderly-population"               = 0
-"young-population"              = 0
-"total-population"                    = 0
-"rail-length"                       = 0
-"road-length"                       = 0
-"elevation-mean"                    = 0
-"slope-mean"                        = 0
-"crop-area"                         = 0
+avg_tele                          = 1
+electricity_access                = 1
+mean_sex_ratio                    = 2
+inundation_intensity_mean_nonzero = 2
+rc_piped_water_households_pct     = 2
+rc_no_sanitation_households_pct   = 2
+inundation_intensity_sum          = 2
+max_rain                          = 2
+mean_rain                         = 2
+sum_rain                          = 2
+elderly_population                = 0
+young_population                  = 0
+total_population                  = 0
+rail_length                       = 0
+road_length                       = 0
+elevation_mean                    = 0
+slope_mean                        = 0
+crop_area                         = 0
 
 # Optional, geography-specific post-processing of the final output, applied by
-# topsis_riskscore.py. Column names are the post-rename kebab-case output columns.
+# topsis_riskscore.py. Keys are snake_case column names (kebab-cased automatically
+# on output).
 
 # Multiply a column in place by a constant factor (here: fraction -> percentage).
 [derivations.scale]
-"inundation-pct" = 100
+inundation_pct = 100
 
 # Create a new column as the row-wise sum of components (only if all are present).
 [derivations.sum]
-"total-infrastructure-damage" = ["total-houses-fully-damaged", "roads-damaged", "bridges-damaged"]
+total_infrastructure_damage = ["total_houses_fully_damaged", "roads_damaged", "bridges_damaged"]
 
 # Rename output columns (missing names are ignored). Tenders flagged as
 # "Preparedness Measures" are surfaced on the platform as restoration measures.
 [renames]
-"preparedness-measures-tenders-awarded-value" = "restoration-measures-tenders-awarded-value"
+preparedness_measures_tenders_awarded_value = "restoration_measures_tenders_awarded_value"

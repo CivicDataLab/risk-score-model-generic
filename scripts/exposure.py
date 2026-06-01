@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from config.loader import load_config
 from scripts.common import (
+    EXPOSURE_COL,
     classify_std_intervals,
     load_master,
     merge_and_save,
@@ -17,7 +18,7 @@ def main():
 
     value_vars = cfg["inputs"]["variables"]
     classes = cfg["classification"]["classes"]
-    class_col = cfg["output"]["class_column"]
+    class_col = EXPOSURE_COL
     time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
 

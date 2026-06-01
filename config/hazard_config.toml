@@ -19,10 +19,8 @@ quantile_thresholds = [0.35, 0.60, 0.80, 0.95]
 classes             = [1, 2, 3, 4, 5]
 
 [output]
-float_column = "flood-hazard-float"
-class_column = "flood-hazard"
-file         = "factor_scores_l1_flood-hazard.csv"
-plot_file    = "hazard_distribution.png"
+file      = "factor_scores_l1_flood-hazard.csv"
+plot_file = "hazard_distribution.png"
 
 [plot]
 figsize = [15, 6]

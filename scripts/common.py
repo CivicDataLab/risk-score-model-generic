@@ -19,6 +19,21 @@ warnings.filterwarnings("ignore")
 
 RISKMODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Output column names produced by the factor scripts and consumed by
+# topsis_riskscore.py. These are a fixed internal contract between those scripts,
+# NOT a geography knob: changing one here means changing it in the producing
+# factor script and every consumer in TOPSIS together. They are deliberately not
+# configurable, since nothing about a geography's input data depends on them.
+# Display columns are kebab-cased on final write in TOPSIS.
+HAZARD_CLASS_COL = "flood-hazard"
+HAZARD_FLOAT_COL = "flood-hazard-float"
+EXPOSURE_COL = "exposure"
+VULNERABILITY_COL = "vulnerability"
+EFFICIENCY_COL = "efficiency"
+DAMAGE_SCORE_COL = "damage_score"
+GOVTRESPONSE_COL = "government-response"
+FINANCIAL_YEAR_COL = "financial_year"
+
 
 def load_master(cfg):
     """Read the master variables CSV; return (df, data_path)."""

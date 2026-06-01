@@ -186,6 +186,9 @@ Always review this first. It sets the shared paths and column names used by ever
 | `[indicators]` | Generic columns with aggregation rules | Add/remove rows to match the columns in your data (missing ones are ignored) |
 | `[rounding]` | Per-column decimal precision | You want different output rounding |
 
+Column references in this file are written in `snake_case`; the final output columns
+are lowercased and hyphenated to `kebab-case` automatically.
+
 ---
 
 ## Step 3 — Run the Scripts

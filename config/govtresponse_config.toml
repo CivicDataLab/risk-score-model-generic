@@ -25,6 +25,4 @@ start_month = 1
 classes = [5, 4, 3, 2, 1]
 
 [output]
-class_column          = "government-response"
-financial_year_column = "financial_year"
-file                  = "factor_scores_l1_government-response.csv"
+file = "factor_scores_l1_government-response.csv"

@@ -9,13 +9,19 @@ import pandas as pd
 import seaborn as sns
 
 from config.loader import load_config
-from scripts.common import load_master, merge_and_save, score_by_month
+from scripts.common import (
+    HAZARD_CLASS_COL,
+    HAZARD_FLOAT_COL,
+    load_master,
+    merge_and_save,
+    score_by_month,
+)
 
 
 def calculate_hazard_scores(df, cfg):
     hazard_vars = cfg["inputs"]["variables"]
-    float_col = cfg["output"]["float_column"]
-    class_col = cfg["output"]["class_column"]
+    float_col = HAZARD_FLOAT_COL
+    class_col = HAZARD_CLASS_COL
 
     transformed = pd.DataFrame()
     for var in hazard_vars:
@@ -43,8 +49,8 @@ def calculate_hazard_scores(df, cfg):
 
 
 def plot_hazard_distribution(df, cfg, output_path=None):
-    float_col = cfg["output"]["float_column"]
-    class_col = cfg["output"]["class_column"]
+    float_col = HAZARD_FLOAT_COL
+    class_col = HAZARD_CLASS_COL
     figsize = cfg["plot"]["figsize"]
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
@@ -73,7 +79,7 @@ def plot_hazard_distribution(df, cfg, output_path=None):
 
 
 def validate_hazard_distribution(df, cfg):
-    class_col = cfg["output"]["class_column"]
+    class_col = HAZARD_CLASS_COL
     dist = df[class_col].value_counts().sort_index()
     total = len(df)
 
@@ -113,8 +119,8 @@ def main():
     cfg = load_config("hazard_config")
 
     hazard_vars = cfg["inputs"]["variables"]
-    float_col = cfg["output"]["float_column"]
-    class_col = cfg["output"]["class_column"]
+    float_col = HAZARD_FLOAT_COL
+    class_col = HAZARD_CLASS_COL
     time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
 

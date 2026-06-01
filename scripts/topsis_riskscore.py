@@ -8,7 +8,26 @@ import numpy as np
 import pandas as pd
 
 from config.loader import load_config
-from scripts.common import RISKMODEL_DIR
+from scripts.common import (
+    EFFICIENCY_COL,
+    EXPOSURE_COL,
+    FINANCIAL_YEAR_COL,
+    GOVTRESPONSE_COL,
+    HAZARD_CLASS_COL,
+    HAZARD_FLOAT_COL,
+    RISKMODEL_DIR,
+    VULNERABILITY_COL,
+)
+
+# Each factor's output column paired with its weight key in [weights]. One ordered
+# source of truth so the evaluation-matrix columns and the weight vector cannot
+# drift out of alignment.
+FACTOR_WEIGHTS = [
+    (HAZARD_CLASS_COL, "flood_hazard"),
+    (EXPOSURE_COL, "exposure"),
+    (VULNERABILITY_COL, "vulnerability"),
+    (GOVTRESPONSE_COL, "government_response"),
+]
 
 
 def topsis(evaluation_matrix, weight_matrix):
@@ -65,31 +84,28 @@ def main():
     time_out = _kebab(time_col)
     district_out = _kebab(district_col)
 
-    weights = [
-        cfg["weights"]["flood_hazard"],
-        cfg["weights"]["exposure"],
-        cfg["weights"]["vulnerability"],
-        cfg["weights"]["government_response"],
-    ]
+    factor_cols = [col for col, _ in FACTOR_WEIGHTS]
+    weights = [cfg["weights"][weight_key] for _, weight_key in FACTOR_WEIGHTS]
     n_bins = cfg["classification"]["n_bins"]
     cumulative_vars = cfg["cumulative_vars"]["variables"]
-    indicators = list(cfg["indicators"].keys())
-    aggregation_rules = cfg["indicators"]
-    rounding_rules = cfg["rounding"]
+    # Config keys are written in snake_case (one spelling per file); the output
+    # columns they refer to are kebab-cased, so kebab the keys here to match.
+    aggregation_rules = {_kebab(k): v for k, v in cfg["indicators"].items()}
+    indicators = list(aggregation_rules.keys())
+    rounding_rules = {_kebab(k): v for k, v in cfg["rounding"].items()}
 
     data_dir = os.path.join(RISKMODEL_DIR, cfg["paths"]["data_folder"])
 
     factor_files = glob.glob(os.path.join(data_dir, "factor_scores_l1*.csv"))
 
-    factors = ["exposure", "flood-hazard", "vulnerability", "government-response"]
     # Extra per-unit columns to carry through from the factor files (only those
     # actually present are kept), used downstream for display/diagnostics.
-    additional_columns = ["financial_year", "efficiency", "flood-hazard-float"]
+    additional_columns = [FINANCIAL_YEAR_COL, EFFICIENCY_COL, HAZARD_FLOAT_COL]
 
     merged_df = pd.read_csv(factor_files[0])
     for path in factor_files[1:]:
         df = pd.read_csv(path)
-        selected = [c for c in factors if c in df.columns]
+        selected = [c for c in factor_cols if c in df.columns]
         selected_extra = [c for c in additional_columns if c in df.columns]
         df = df[selected + [object_id_col, time_col] + selected_extra]
         merged_df = pd.merge(
@@ -97,12 +113,12 @@ def main():
         )
         merged_df = merged_df.loc[:, ~merged_df.columns.str.endswith("_drop")]
 
-    merged_df.sort_values(by=[object_id_col, "financial_year", time_col], inplace=True)
+    merged_df.sort_values(by=[object_id_col, FINANCIAL_YEAR_COL, time_col], inplace=True)
 
     for var in cumulative_vars:
         if var in merged_df.columns:
             merged_df[var + "_fy_cumsum"] = merged_df.groupby(
-                [object_id_col, "financial_year"]
+                [object_id_col, FINANCIAL_YEAR_COL]
             )[var].cumsum()
 
     dist_ids = pd.read_csv(os.path.join(RISKMODEL_DIR, cfg["paths"]["district_lookup_file"]))
@@ -115,9 +131,7 @@ def main():
     df_months = []
     for month in merged_df[time_col].unique():
         df_month = merged_df[merged_df[time_col] == month]
-        evaluation_matrix = np.array(
-            df_month[["flood-hazard", "exposure", "vulnerability", "government-response"]].values
-        )
+        evaluation_matrix = np.array(df_month[factor_cols].values)
 
         df_month = df_month.copy()
         df_month["topsis_score"] = topsis(evaluation_matrix, weights)
@@ -138,19 +152,19 @@ def main():
     )
 
     dist_vul = _district_factor_score(
-        topsis_result, "vulnerability", dist_ids, n_bins, compositescorelabels,
+        topsis_result, VULNERABILITY_COL, dist_ids, n_bins, compositescorelabels,
         district_out, time_out,
     )
     dist_exp = _district_factor_score(
-        topsis_result, "exposure", dist_ids, n_bins, compositescorelabels,
+        topsis_result, EXPOSURE_COL, dist_ids, n_bins, compositescorelabels,
         district_out, time_out,
     )
     dist_govt = _district_factor_score(
-        topsis_result, "government-response", dist_ids, n_bins, compositescorelabels,
+        topsis_result, GOVTRESPONSE_COL, dist_ids, n_bins, compositescorelabels,
         district_out, time_out,
     )
     dist_haz = _district_factor_score(
-        topsis_result, "flood-hazard", dist_ids, n_bins, compositescorelabels,
+        topsis_result, HAZARD_CLASS_COL, dist_ids, n_bins, compositescorelabels,
         district_out, time_out,
     )
 
@@ -177,9 +191,9 @@ def main():
     dist = pd.concat(
         [
             dist_vul.set_index([district_out, time_out]),
-            dist_exp.set_index([district_out, time_out])["exposure"],
-            dist_govt.set_index([district_out, time_out])["government-response"],
-            dist_haz.set_index([district_out, time_out])["flood-hazard"],
+            dist_exp.set_index([district_out, time_out])[EXPOSURE_COL],
+            dist_govt.set_index([district_out, time_out])[GOVTRESPONSE_COL],
+            dist_haz.set_index([district_out, time_out])[HAZARD_CLASS_COL],
             dist_risk.set_index([district_out, time_out])["risk-score"],
             dist_indicators.set_index([district_out, time_out])[present_indicators],
         ],
@@ -192,22 +206,27 @@ def main():
 
     # Optional, config-driven post-processing (see the [derivations] and [renames]
     # sections of the TOPSIS config). All of this is optional: a geography that
-    # omits those sections — as the generic config does — is unaffected. Column
-    # names refer to the post-rename kebab-case output columns. This keeps any
-    # geography-specific display logic in that geography's own config rather than
-    # hardcoded in the shared pipeline.
+    # omits those sections — as the generic config does — is unaffected. Config
+    # keys are written in snake_case and kebab-cased here to match the output
+    # columns. This keeps any geography-specific display logic in that geography's
+    # own config rather than hardcoded in the shared pipeline.
     derivations = cfg.get("derivations", {})
     # Scale a column in place by a constant factor (e.g. fraction -> percentage).
     for column, factor in derivations.get("scale", {}).items():
+        column = _kebab(column)
         if column in final.columns:
             final[column] = final[column] * factor
     # Create a new column as the row-wise sum of components, only when all are present.
     for new_column, components in derivations.get("sum", {}).items():
+        components = [_kebab(c) for c in components]
         if all(c in final.columns for c in components):
-            final[new_column] = final[components].sum(axis=1)
+            final[_kebab(new_column)] = final[components].sum(axis=1)
 
     # Optional column renames; missing columns are ignored.
-    final.rename(columns=cfg.get("renames", {}), inplace=True)
+    final.rename(
+        columns={_kebab(k): _kebab(v) for k, v in cfg.get("renames", {}).items()},
+        inplace=True,
+    )
 
     final.to_csv(
         os.path.join(RISKMODEL_DIR, cfg["paths"]["final_output_file"]), index=False

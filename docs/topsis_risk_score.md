@@ -189,7 +189,7 @@ Required for joining district-level aggregations to geographic IDs. Must contain
 
 ### Indicator Variables (optional)
 
-The 50+ raw indicator columns from `MASTER_VARIABLES.csv` are carried through and aggregated to district level for the platform's drill-down display. These are listed in the `indicators` and `aggregation_rules` dictionaries in `topsis_riskscore.py`. Remove or add columns as appropriate for a new geography.
+The 50+ raw indicator columns from `MASTER_VARIABLES.csv` are carried through and aggregated to district level for the platform's drill-down display. These are listed in the `[indicators]` section of `topsis_config.toml`, keyed by column name (snake_case) with the aggregation function as the value. Remove or add rows as appropriate for a new geography.
 
 ---
 
@@ -227,15 +227,17 @@ Contains both block-level rows and district-level summary rows, with:
 ## Adapting for a New Geography
 
 All settings are in `config/topsis_config.toml`. No Python edits are needed.
+Every column reference in the config is written in `snake_case`; output columns
+are lowercased and hyphenated to `kebab-case` automatically on write.
 
 | Element | Where to change | What to edit |
 |---------|----------------|-------------|
 | Factor weights | `topsis_config.toml` → `[weights]` | `flood_hazard`, `exposure`, `vulnerability`, `government_response` |
 | Number of risk classes | `topsis_config.toml` → `classification.n_bins` | Integer (default `5`) |
 | District lookup | `data/district_objectid.csv` | Replace with local district-to-ID mapping |
-| Indicator columns and aggregation | `topsis_config.toml` → `[indicators]` | Remove rows for columns absent in your data; add new rows for additional columns |
-| Output rounding | `topsis_config.toml` → `[rounding]` | Column name → decimal places |
-| Derived / renamed output columns | `topsis_config.toml` → `[derivations]`, `[renames]` | Optional display-only column derivations and renames (geography-specific; omit if not needed) |
+| Indicator columns and aggregation | `topsis_config.toml` → `[indicators]` | Remove rows for columns absent in your data; add new rows (snake_case column name → aggregation function) |
+| Output rounding | `topsis_config.toml` → `[rounding]` | snake_case column name → decimal places |
+| Derived / renamed output columns | `topsis_config.toml` → `[derivations]`, `[renames]` | Optional display-only column derivations and renames (snake_case; geography-specific; omit if not needed) |
 | Fiscal year logic (response score) | `govtresponse_config.toml` → `fiscal_year.start_month` | Month number when fiscal year starts (default `1` for January; the India example uses `4` for April) |
 
 For a full step-by-step guide covering all factor scripts, see [getting_started.md](./getting_started.md).

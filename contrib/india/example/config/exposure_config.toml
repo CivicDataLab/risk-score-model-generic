@@ -14,5 +14,4 @@ variables = [
 classes = [1, 2, 3, 4, 5]
 
 [output]
-class_column = "exposure"
-file         = "factor_scores_l1_exposure.csv"
+file = "factor_scores_l1_exposure.csv"
