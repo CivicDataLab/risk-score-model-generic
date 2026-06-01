@@ -1,11 +1,3 @@
-geopandas==0.14.4
-jenkspy==0.4.1
-matplotlib==3.9.2
-numpy==1.26.4
-pandas==2.2.3
-PuLP==2.8.0
-requests==2.32.3
-scikit-learn==1.5.1
-scipy==1.12.0
-seaborn==0.13.2
-tqdm==4.66.5
+# Runtime dependencies are declared in pyproject.toml. Installing the package
+# (editable or not) pulls them in:
+-e .

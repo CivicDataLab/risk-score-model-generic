@@ -1,10 +1,10 @@
-"""Shared helpers for the factor-scoring entry scripts.
+"""Shared helpers for the factor-scoring modules.
 
-Collects the boilerplate that the per-factor scripts (hazard, exposure,
+Collects the boilerplate that the per-factor modules (hazard, exposure,
 vulnerability, government-response) otherwise repeat: silencing warnings,
-locating the repository root, reading the master variables CSV, the per-month
-scoring loop, and merging scores back before writing the output CSV. Also holds
-the mean±std interval classifier shared by exposure and government-response.
+reading the master variables CSV, the per-month scoring loop, and merging
+scores back before writing the output CSV. Also holds the mean±std interval
+classifier shared by exposure and government-response.
 """
 
 import os
@@ -15,16 +15,16 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
+from disaster_risk_score_model.config import resolve_data_dir, resolve_input_file
+
 warnings.filterwarnings("ignore")
 
-RISKMODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# Output column names produced by the factor scripts and consumed by
-# topsis_riskscore.py. These are a fixed internal contract between those scripts,
-# NOT a geography knob: changing one here means changing it in the producing
-# factor script and every consumer in TOPSIS together. They are deliberately not
-# configurable, since nothing about a geography's input data depends on them.
-# Display columns are kebab-cased on final write in TOPSIS.
+# Output column names produced by the factor modules and consumed by topsis.py.
+# These are a fixed internal contract between those modules, NOT a geography
+# knob: changing one here means changing it in the producing factor module and
+# every consumer in TOPSIS together. They are deliberately not configurable,
+# since nothing about a geography's input data depends on them. Display columns
+# are kebab-cased on final write in TOPSIS.
 HAZARD_CLASS_COL = "flood-hazard"
 HAZARD_FLOAT_COL = "flood-hazard-float"
 EXPOSURE_COL = "exposure"
@@ -34,11 +34,23 @@ DAMAGE_SCORE_COL = "damage_score"
 GOVTRESPONSE_COL = "government-response"
 FINANCIAL_YEAR_COL = "financial_year"
 
+# Fixed filenames for the TOPSIS district lookup (an input written by
+# generate-sample-data) and the two TOPSIS outputs. Like the column names above,
+# these are an internal pipeline contract and are not configurable; only their
+# containing directory varies, via the resolved data dir.
+DISTRICT_LOOKUP_FILE = "district_objectid.csv"
+RISK_SCORE_FILE = "risk_score.csv"
+DISTRICT_RISK_FILE = "risk_score_district.csv"
 
-def load_master(cfg):
-    """Read the master variables CSV; return (df, data_path)."""
-    data_path = os.path.join(RISKMODEL_DIR, cfg["paths"]["data_folder"])
-    df = pd.read_csv(os.path.join(data_path, cfg["paths"]["input_file"]))
+
+def load_master(data_dir=None, input_file=None):
+    """Read the master variables CSV; return (df, data_dir).
+
+    The returned ``data_dir`` is the resolved data directory, where callers
+    write their output CSV.
+    """
+    data_path = resolve_data_dir(data_dir)
+    df = pd.read_csv(os.path.join(data_path, resolve_input_file(input_file)))
     return df, data_path
 
 

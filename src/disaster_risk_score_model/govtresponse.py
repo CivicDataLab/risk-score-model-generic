@@ -1,10 +1,7 @@
 import os
-import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-
-from config.loader import load_config
-from scripts.common import (
+from disaster_risk_score_model.config import load_config
+from disaster_risk_score_model.common import (
     FINANCIAL_YEAR_COL,
     GOVTRESPONSE_COL,
     classify_std_intervals,
@@ -22,8 +19,8 @@ def get_financial_year(timeperiod, start_month):
     return f"{year - 1}-{year}"
 
 
-def main():
-    cfg = load_config("govtresponse_config")
+def main(config_dir=None, data_dir=None, input_file=None):
+    cfg = load_config("govtresponse", config_dir=config_dir)
 
     value_vars = cfg["inputs"]["variables"]
     start_month = cfg["fiscal_year"]["start_month"]
@@ -33,7 +30,7 @@ def main():
     time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
 
-    master, data_path = load_master(cfg)
+    master, data_path = load_master(data_dir, input_file)
 
     master[fy_col] = master[time_col].apply(
         lambda x: get_financial_year(x, start_month)
@@ -52,7 +49,3 @@ def main():
         os.path.join(data_path, cfg["output"]["file"]),
     )
     print("Results saved successfully!")
-
-
-if __name__ == "__main__":
-    main()

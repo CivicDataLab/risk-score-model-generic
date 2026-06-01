@@ -1,21 +1,20 @@
 import glob
 import os
-import sys
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 import numpy as np
 import pandas as pd
 
-from config.loader import load_config
-from scripts.common import (
+from disaster_risk_score_model.config import load_config, resolve_data_dir
+from disaster_risk_score_model.common import (
+    DISTRICT_LOOKUP_FILE,
+    DISTRICT_RISK_FILE,
     EFFICIENCY_COL,
     EXPOSURE_COL,
     FINANCIAL_YEAR_COL,
     GOVTRESPONSE_COL,
     HAZARD_CLASS_COL,
     HAZARD_FLOAT_COL,
-    RISKMODEL_DIR,
+    RISK_SCORE_FILE,
     VULNERABILITY_COL,
 )
 
@@ -73,8 +72,8 @@ def apply_rounding_rules(df, rules):
     return df
 
 
-def main():
-    cfg = load_config("topsis_config")
+def main(config_dir=None, data_dir=None):
+    cfg = load_config("topsis", config_dir=config_dir)
 
     object_id_col = cfg["columns"]["object_id_column"]
     time_col = cfg["columns"]["time_column"]
@@ -87,14 +86,16 @@ def main():
     factor_cols = [col for col, _ in FACTOR_WEIGHTS]
     weights = [cfg["weights"][weight_key] for _, weight_key in FACTOR_WEIGHTS]
     n_bins = cfg["classification"]["n_bins"]
-    cumulative_vars = cfg["cumulative_vars"]["variables"]
+    # The enrichment sections are optional; a minimal config may omit them and
+    # still produce the core risk scores.
+    cumulative_vars = cfg.get("cumulative_vars", {}).get("variables", [])
     # Config keys are written in snake_case (one spelling per file); the output
     # columns they refer to are kebab-cased, so kebab the keys here to match.
-    aggregation_rules = {_kebab(k): v for k, v in cfg["indicators"].items()}
+    aggregation_rules = {_kebab(k): v for k, v in cfg.get("indicators", {}).items()}
     indicators = list(aggregation_rules.keys())
-    rounding_rules = {_kebab(k): v for k, v in cfg["rounding"].items()}
+    rounding_rules = {_kebab(k): v for k, v in cfg.get("rounding", {}).items()}
 
-    data_dir = os.path.join(RISKMODEL_DIR, cfg["paths"]["data_folder"])
+    data_dir = resolve_data_dir(data_dir)
 
     factor_files = glob.glob(os.path.join(data_dir, "factor_scores_l1*.csv"))
 
@@ -121,7 +122,7 @@ def main():
                 [object_id_col, FINANCIAL_YEAR_COL]
             )[var].cumsum()
 
-    dist_ids = pd.read_csv(os.path.join(RISKMODEL_DIR, cfg["paths"]["district_lookup_file"]))
+    dist_ids = pd.read_csv(os.path.join(data_dir, DISTRICT_LOOKUP_FILE))
     # Match the kebab-case naming applied to the block-level result below, so the
     # district lookup id lands in the same column as the block-level object id
     # rather than a separate snake_case column after the final concat.
@@ -148,7 +149,7 @@ def main():
     topsis_result.columns = [_kebab(col) for col in topsis_result.columns]
 
     topsis_result.to_csv(
-        os.path.join(RISKMODEL_DIR, cfg["paths"]["output_file"]), index=False
+        os.path.join(data_dir, RISK_SCORE_FILE), index=False
     )
 
     dist_vul = _district_factor_score(
@@ -229,10 +230,6 @@ def main():
     )
 
     final.to_csv(
-        os.path.join(RISKMODEL_DIR, cfg["paths"]["final_output_file"]), index=False
+        os.path.join(data_dir, DISTRICT_RISK_FILE), index=False
     )
     print("Risk score computation complete.")
-
-
-if __name__ == "__main__":
-    main()

@@ -1,22 +1,22 @@
 """Generate a small, geography-neutral synthetic sample dataset.
 
-This script produces the bundled sample inputs that let the risk-score model
+This module produces the synthetic sample inputs that let the risk-score model
 run end-to-end without first running a real data pipeline:
 
-    data/MASTER_VARIABLES.csv     one row per geographic unit per month
-    data/district_objectid.csv    district name -> district-level object_id
+    <data-dir>/MASTER_VARIABLES.csv    one row per geographic unit per month
+    <data-dir>/district_objectid.csv   district name -> district-level object_id
 
 The data is entirely fictional. Place names, identifiers and values are
 invented and chosen only so that the pipeline exercises all of its branches
 (every factor produces a spread of 1-5 classes). The column set matches the
-generic configuration under ``config/``. For a real-world example with genuine
+generic ``scores_config.toml``. For a real-world example with genuine
 administrative units and data sources, see ``contrib/india/example/``.
 
 The generator is deterministic (fixed RNG seed), so re-running it reproduces
-the committed CSVs exactly.
+the same CSVs exactly.
 
 Usage:
-    python scripts/generate_sample_data.py
+    drsm generate-sample-data [--data-dir DIR] [--input-file NAME]
 """
 
 import os
@@ -24,11 +24,10 @@ import os
 import numpy as np
 import pandas as pd
 
-SEED = 42
+from disaster_risk_score_model.common import DISTRICT_LOOKUP_FILE
+from disaster_risk_score_model.config import resolve_data_dir, resolve_input_file
 
-# Output location, relative to the repository root.
-_RISKMODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(_RISKMODEL_DIR, "data")
+SEED = 42
 
 # Fictional districts, each with a handful of sub-district units.
 DISTRICTS = [
@@ -86,7 +85,7 @@ def build_units():
     return units, lookup
 
 
-def generate():
+def generate(data_dir=None, input_file=None):
     rng = np.random.default_rng(SEED + 1)
     units, lookup = build_units()
 
@@ -191,15 +190,12 @@ def generate():
     df = pd.DataFrame(rows)
     lookup_df = pd.DataFrame(lookup)
 
-    os.makedirs(DATA_DIR, exist_ok=True)
-    master_path = os.path.join(DATA_DIR, "MASTER_VARIABLES.csv")
-    lookup_path = os.path.join(DATA_DIR, "district_objectid.csv")
+    data_dir = resolve_data_dir(data_dir)
+    os.makedirs(data_dir, exist_ok=True)
+    master_path = os.path.join(data_dir, resolve_input_file(input_file))
+    lookup_path = os.path.join(data_dir, DISTRICT_LOOKUP_FILE)
     df.to_csv(master_path, index=False)
     lookup_df.to_csv(lookup_path, index=False)
 
     print(f"Wrote {len(df):,} rows x {df.shape[1]} columns -> {master_path}")
     print(f"Wrote {len(lookup_df)} districts -> {lookup_path}")
-
-
-if __name__ == "__main__":
-    generate()

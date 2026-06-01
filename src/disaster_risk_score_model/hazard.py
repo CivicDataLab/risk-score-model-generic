@@ -1,15 +1,12 @@
 import os
-import sys
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from config.loader import load_config
-from scripts.common import (
+from disaster_risk_score_model.config import load_config
+from disaster_risk_score_model.common import (
     HAZARD_CLASS_COL,
     HAZARD_FLOAT_COL,
     load_master,
@@ -115,8 +112,8 @@ def print_variable_statistics(df, hazard_vars):
         print(f"  Skew: {df[var].skew():.2f}")
 
 
-def main():
-    cfg = load_config("hazard_config")
+def main(config_dir=None, data_dir=None, input_file=None):
+    cfg = load_config("hazard", config_dir=config_dir)
 
     hazard_vars = cfg["inputs"]["variables"]
     float_col = HAZARD_FLOAT_COL
@@ -124,7 +121,7 @@ def main():
     time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
 
-    master, data_path = load_master(cfg)
+    master, data_path = load_master(data_dir, input_file)
 
     print_variable_statistics(master, hazard_vars)
 
@@ -149,7 +146,3 @@ def main():
     )
 
     print("\nResults saved successfully!")
-
-
-if __name__ == "__main__":
-    main()

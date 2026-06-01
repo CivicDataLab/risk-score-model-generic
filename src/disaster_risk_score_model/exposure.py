@@ -1,10 +1,7 @@
 import os
-import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-
-from config.loader import load_config
-from scripts.common import (
+from disaster_risk_score_model.config import load_config
+from disaster_risk_score_model.common import (
     EXPOSURE_COL,
     classify_std_intervals,
     load_master,
@@ -13,8 +10,8 @@ from scripts.common import (
 )
 
 
-def main():
-    cfg = load_config("exposure_config")
+def main(config_dir=None, data_dir=None, input_file=None):
+    cfg = load_config("exposure", config_dir=config_dir)
 
     value_vars = cfg["inputs"]["variables"]
     classes = cfg["classification"]["classes"]
@@ -22,7 +19,7 @@ def main():
     time_col = cfg["columns"]["time_column"]
     object_id_col = cfg["columns"]["object_id_column"]
 
-    master, data_path = load_master(cfg)
+    master, data_path = load_master(data_dir, input_file)
     scored = score_by_month(
         master, value_vars, time_col, object_id_col,
         lambda d: classify_std_intervals(d, value_vars, classes, class_col),
@@ -32,7 +29,3 @@ def main():
         os.path.join(data_path, cfg["output"]["file"]),
     )
     print("Results saved successfully!")
-
-
-if __name__ == "__main__":
-    main()
