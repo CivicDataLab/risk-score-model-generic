@@ -11,3 +11,4 @@ input_file  = "MASTER_VARIABLES.csv"
 # Column names in MASTER_VARIABLES.csv that every script requires.
 time_column     = "timeperiod"
 object_id_column = "object_id"
+district_column = "district"

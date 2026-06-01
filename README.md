@@ -145,7 +145,7 @@ Configuration TOML files are available under `config/`. The loader (`config/load
 
 | File | Controls |
 |------|----------|
-| `base_config.toml` | Input file path and shared column names (`object_id`, `timeperiod`) |
+| `base_config.toml` | Input file path and shared column names (`object_id`, `timeperiod`, `district`) |
 | `hazard_config.toml` | Hazard variables, quantile thresholds, output classes |
 | `exposure_config.toml` | Exposure variables and class boundaries |
 | `vulnerability_config.toml` | DEA input/output variables and polarity inversions |

@@ -13,3 +13,4 @@ input_file  = "MASTER_VARIABLES.csv"
 # district-level aggregation in the TOPSIS step.
 time_column     = "timeperiod"
 object_id_column = "object_id"
+district_column = "district"

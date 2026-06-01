@@ -137,6 +137,7 @@ Always review this first. It sets the shared paths and column names used by ever
 | `paths.input_file` | `MASTER_VARIABLES.csv` | Your input file has a different name |
 | `columns.time_column` | `timeperiod` | Your time column has a different name |
 | `columns.object_id_column` | `object_id` | Your geographic ID column is named differently |
+| `columns.district_column` | `district` | Your parent-unit (aggregation) column is named differently |
 
 ### `config/hazard_config.toml`
 

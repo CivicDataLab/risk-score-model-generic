@@ -76,6 +76,7 @@ def test_final_district_output(pipeline_outputs):
     block = _read("risk_score.csv")
     # District-level rows are appended below the block-level rows.
     assert len(final) > len(block)
-    # Block rows keep their kebab-case "object-id"; appended district rows do not.
-    assert final["object-id"].notna().sum() > 0   # block-level rows present
-    assert final["object-id"].isna().sum() > 0    # district-level rows appended
+    # Every row carries a unit- or district-level "object-id" in one column;
+    # no NaN split and no stray snake_case "object_id" column.
+    assert final["object-id"].notna().all()
+    assert "object_id" not in final.columns

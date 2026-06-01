@@ -156,7 +156,7 @@ After block-level scoring, district-level summaries are computed by grouping on 
 | TOPSIS score | `mean` |
 | Risk score | `mean` then re-binned with `pd.cut` |
 
-District-level rows are concatenated below the original block-level rows into a single file. Block rows carry a unit-level `object-id`; the appended district-summary rows carry only the district name and the district-level lookup id.
+District-level rows are concatenated below the original block-level rows into a single file. Both share one `object-id` column: block rows carry their unit-level id, and the appended district-summary rows carry the district-level lookup id (plus the district name).
 
 ---
 
@@ -172,9 +172,9 @@ All four must be present, either merged or loadable from separate files:
 | `exposure` | Integer (1–5) | `factor_scores_l1_exposure.csv` |
 | `vulnerability` | Integer (1–5) | `factor_scores_l1_vulnerability.csv` |
 | `government-response` | Integer (1–5) | `factor_scores_l1_government-response.csv` |
-| `object_id` | Integer | Unique geographic unit ID |
-| `timeperiod` | String `YYYY_MM` | Month identifier |
-| `district` | String | Parent district name |
+| `object_id` | String | Unique geographic unit ID (any scheme; configurable via `object_id_column`) |
+| `timeperiod` | String `YYYY_MM` | Month identifier (configurable via `time_column`) |
+| `district` | String | Parent unit used for aggregation (configurable via `district_column`) |
 
 ### District ID Lookup
 
@@ -184,8 +184,8 @@ Required for joining district-level aggregations to geographic IDs. Must contain
 
 | Column | Description |
 |--------|-------------|
-| `district` | District name matching the master data |
-| `object_id` | Corresponding district-level object ID for the platform |
+| `district` | District name matching the master data. Use the same column name as the configured `district_column`. |
+| `object_id` | Corresponding district-level object ID for the platform. Use the same column name as the configured `object_id_column`. |
 
 ### Indicator Variables (optional)
 
