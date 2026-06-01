@@ -43,7 +43,7 @@ dev = [
 drsm = "disaster_risk_score_model.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+include = ["disaster_risk_score_model*"]
 
 [tool.setuptools.package-data]
 "disaster_risk_score_model" = ["config_templates/*.toml"]

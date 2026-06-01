@@ -8,7 +8,7 @@ reviewers locate the relevant evidence in this repository.
 | # | Indicator | Status | Evidence |
 |---|-----------|--------|----------|
 | 1 | **Relevance to SDGs** | ✅ | Supports SDG 13 (Climate Action, targets 13.1 / 13.1.1) and SDG 11 (Sustainable Cities, targets 11.5 / 11.b). See the *Relevance to the Sustainable Development Goals* section of [`README.md`](../README.md). |
-| 2 | **Use of approved open licenses** | ✅ | Source code under **GNU AGPL-3.0** ([`LICENSE`](../LICENSE)); sample/derived data under **CC-BY-4.0**. The DEA module uses the open-source PuLP/CBC solver, not the proprietary Gurobi (see header of [`src/disaster_risk_score_model/dea.py`](../src/disaster_risk_score_model/dea.py)). |
+| 2 | **Use of approved open licenses** | ✅ | Source code under **GNU AGPL-3.0** ([`LICENSE`](../LICENSE)); sample/derived data under **CC-BY-4.0**. The DEA module uses the open-source PuLP/CBC solver, not the proprietary Gurobi (see header of [`disaster_risk_score_model/dea.py`](../disaster_risk_score_model/dea.py)). |
 | 3 | **Clear ownership** | ✅ | Owned by CivicDataLab; ownership and citation recorded in [`CITATION.cff`](../CITATION.cff) and the repository's GitHub organisation. |
 | 4 | **Platform independence** | ✅ | Pure-Python package (3.11+) with only OSI-approved open-source dependencies (declared in [`pyproject.toml`](../pyproject.toml)). No mandatory proprietary components or hosted services. |
 | 5 | **Documentation** | ✅ | End-user and adopter docs in [`docs/`](.) (getting-started, per-factor methodology, TOPSIS); contributor docs in [`CONTRIBUTING.md`](../CONTRIBUTING.md); a runnable reference example in [`contrib/india/example/`](../contrib/india/example/). |
@@ -19,12 +19,12 @@ reviewers locate the relevant evidence in this repository.
 
 ## Notes for reviewers
 
-- **Geography neutrality.** The core library (`src/disaster_risk_score_model/`,
+- **Geography neutrality.** The core library (`disaster_risk_score_model/`,
   including its bundled config templates) is geography-neutral and runs out of
   the box on a synthetic sample. All India-specific assumptions (government
   finance schemes, fiscal calendar, administrative coding, named data sources)
   are isolated under [`contrib/india/`](../contrib/india/).
 - **Reproducibility.** The sample dataset is generated deterministically by
   `drsm generate-sample-data` (module
-  [`disaster_risk_score_model.sample_data`](../src/disaster_risk_score_model/sample_data.py));
+  [`disaster_risk_score_model.sample_data`](../disaster_risk_score_model/sample_data.py));
   the full pipeline can be reproduced end-to-end from a fresh clone.

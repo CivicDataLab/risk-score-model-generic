@@ -108,7 +108,7 @@ important for a machine-readable Digital Public Good.
   When you add, remove, or rename a column, update the dictionary in the same PR
   so the schema contract stays accurate.
 - **Keep geography-specific names out of the generic core** (the
-  `src/disaster_risk_score_model/` library and its bundled config templates).
+  `disaster_risk_score_model/` library and its bundled config templates).
   Anything specific to one jurisdiction — scheme acronyms,
   local administrative units, display-only derivations — belongs in that
   geography's config under `contrib/` (see the `[derivations]` and `[renames]`

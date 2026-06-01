@@ -10,8 +10,8 @@ The model takes a master dataset of spatial variables (one row per geographic un
 
 ```
 risk-score-model-generic/
-├── src/disaster_risk_score_model/  ← installable library: scoring modules, CLI,
-│                                      config loader, bundled config templates
+├── disaster_risk_score_model/  ← installable library: scoring modules, CLI,
+│                                  config loader, bundled config templates
 ├── data/           ← generated MASTER_VARIABLES.csv input + output CSVs (gitignored)
 ├── contrib/india/  ← India-specific tooling and the Assam reference example
 └── docs/           ← THIS DIRECTORY — methodology documentation

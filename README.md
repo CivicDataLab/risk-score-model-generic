@@ -35,8 +35,8 @@ By producing transparent, reproducible risk scores at granular administrative le
 
 ```
 risk-score-model-generic/
-├── src/disaster_risk_score_model/   Installable library: factor + TOPSIS modules,
-│                                    CLI, config loader, bundled config templates
+├── disaster_risk_score_model/   Installable library: factor + TOPSIS modules,
+│                                CLI, config loader, bundled config templates
 ├── tests/               Automated tests (pytest)
 ├── docs/                Methodology documentation + data dictionary
 ├── contrib/             Region-specific tooling and examples
