@@ -1,5 +1,3 @@
-import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -142,7 +140,7 @@ def main(config_dir=None, data_dir=None, input_file=None):
         scored,
         [time_col, object_id_col],
         [class_col, float_col],
-        os.path.join(data_path, cfg["output"]["file"]),
+        data_path / cfg["output"]["file"],
     )
 
     is_valid = validate_hazard_distribution(master)
@@ -154,7 +152,7 @@ def main(config_dir=None, data_dir=None, input_file=None):
     plot_hazard_distribution(
         master,
         cfg,
-        os.path.join(data_path, cfg["output"]["plot_file"]),
+        data_path / cfg["output"]["plot_file"],
     )
 
     print("\nResults saved successfully!")

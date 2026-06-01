@@ -8,7 +8,6 @@ scores back before writing the output CSV. Also holds the mean±std interval
 classifier shared by exposure and government-response.
 """
 
-import os
 import warnings
 
 import numpy as np
@@ -52,7 +51,7 @@ def load_master(data_dir=None, input_file=None):
     write their output CSV.
     """
     data_path = resolve_data_dir(data_dir)
-    df = pd.read_csv(os.path.join(data_path, resolve_input_file(input_file)))
+    df = pd.read_csv(data_path / resolve_input_file(input_file))
     return df, data_path
 
 

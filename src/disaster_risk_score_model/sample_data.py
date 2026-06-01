@@ -20,8 +20,6 @@ Usage:
     drsm generate-sample-data [--data-dir DIR] [--input-file NAME]
 """
 
-import os
-
 import numpy as np
 import pandas as pd
 
@@ -193,9 +191,9 @@ def generate(data_dir=None, input_file=None):
     lookup_df = pd.DataFrame(lookup)
 
     data_dir = resolve_data_dir(data_dir)
-    os.makedirs(data_dir, exist_ok=True)
-    master_path = os.path.join(data_dir, resolve_input_file(input_file))
-    lookup_path = os.path.join(data_dir, DISTRICT_LOOKUP_FILE)
+    data_dir.mkdir(parents=True, exist_ok=True)
+    master_path = data_dir / resolve_input_file(input_file)
+    lookup_path = data_dir / DISTRICT_LOOKUP_FILE
     df.to_csv(master_path, index=False)
     lookup_df.to_csv(lookup_path, index=False)
 

@@ -24,6 +24,7 @@ against data anywhere.
 import os
 import tomllib
 from importlib import resources
+from pathlib import Path
 
 # The factor names whose sections live in scores_config.toml. The shared
 # [columns] table is merged into every returned config.
@@ -33,7 +34,7 @@ _TOPSIS_FILE = "topsis_config.toml"
 _TEMPLATE_FILES = (_SCORES_FILE, _TOPSIS_FILE)
 
 
-def resolve_config_dir(config_dir: str | None = None) -> str:
+def resolve_config_dir(config_dir: str | None = None) -> Path:
     """
     Resolve the config directory, or raise if none can be found.
 
@@ -41,20 +42,20 @@ def resolve_config_dir(config_dir: str | None = None) -> str:
     then a ``config`` directory in the current working directory.
     """
     if config_dir:
-        return os.path.abspath(config_dir)
+        return Path(config_dir).resolve()
     env = os.environ.get("RISK_MODEL_CONFIG_DIR")
     if env:
-        return os.path.abspath(env)
-    cwd_config = os.path.join(os.getcwd(), "config")
-    if os.path.isdir(cwd_config):
+        return Path(env).resolve()
+    cwd_config = Path.cwd() / "config"
+    if cwd_config.is_dir():
         return cwd_config
     raise FileNotFoundError(
         "no config found. Run: drsm init-config ./config (or pass --config-dir PATH, or set RISK_MODEL_CONFIG_DIR)."
     )
 
 
-def _read_toml(config_dir: str, filename: str) -> dict:
-    with open(os.path.join(config_dir, filename), "rb") as f:
+def _read_toml(config_dir: Path, filename: str) -> dict:
+    with (config_dir / filename).open("rb") as f:
         return tomllib.load(f)
 
 
@@ -80,14 +81,15 @@ def load_config(name: str, config_dir: str | None = None) -> dict:
     if name not in _SCORE_FACTORS:
         raise ValueError(f"Unknown config section {name!r}; expected one of {', '.join((*_SCORE_FACTORS, 'topsis'))}.")
     if name not in scores:
-        raise KeyError(f"Section [{name}] not found in {os.path.join(cfg_dir, _SCORES_FILE)}.")
+        raise KeyError(f"Section [{name}] not found in {cfg_dir / _SCORES_FILE}.")
     return {"columns": columns, **scores[name]}
 
 
 def init_config(dest_dir: str) -> None:
     """Scaffold an editable config directory from the bundled templates."""
-    os.makedirs(dest_dir, exist_ok=True)
-    existing = [f for f in _TEMPLATE_FILES if os.path.exists(os.path.join(dest_dir, f))]
+    dest = Path(dest_dir)
+    dest.mkdir(parents=True, exist_ok=True)
+    existing = [f for f in _TEMPLATE_FILES if (dest / f).exists()]
     if existing:
         raise FileExistsError(
             f"{dest_dir} already contains {', '.join(existing)}; refusing to "
@@ -95,12 +97,12 @@ def init_config(dest_dir: str) -> None:
         )
     templates = resources.files("disaster_risk_score_model") / "config_templates"
     for name in _TEMPLATE_FILES:
-        with open(os.path.join(dest_dir, name), "wb") as f:
+        with (dest / name).open("wb") as f:
             f.write((templates / name).read_bytes())
     print(f"Wrote {len(_TEMPLATE_FILES)} config files to {dest_dir}")
 
 
-def resolve_data_dir(data_dir: str | None = None) -> str:
+def resolve_data_dir(data_dir: str | None = None) -> Path:
     """
     Resolve the data directory for all inputs and outputs.
 
@@ -108,11 +110,11 @@ def resolve_data_dir(data_dir: str | None = None) -> str:
     ``./data`` in the current working directory.
     """
     if data_dir:
-        return os.path.abspath(data_dir)
+        return Path(data_dir).resolve()
     env = os.environ.get("RISK_MODEL_DATA_DIR")
     if env:
-        return os.path.abspath(env)
-    return os.path.abspath("data")
+        return Path(env).resolve()
+    return Path("data").resolve()
 
 
 def resolve_input_file(input_file: str | None = None) -> str:

@@ -1,5 +1,3 @@
-import os
-
 from disaster_risk_score_model.common import (
     EXPOSURE_COL,
     classify_std_intervals,
@@ -32,6 +30,6 @@ def main(config_dir=None, data_dir=None, input_file=None):
         scored,
         [time_col, object_id_col],
         [class_col],
-        os.path.join(data_path, cfg["output"]["file"]),
+        data_path / cfg["output"]["file"],
     )
     print("Results saved successfully!")

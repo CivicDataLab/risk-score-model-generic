@@ -25,9 +25,9 @@ Layers:
 from __future__ import annotations
 
 import json
-import os
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -43,9 +43,9 @@ VALID_LEVELS = {"state", "district", "subdistrict", "village", "all"}
 # compute a base directory relative to this script so that the exporter
 # always writes into the repo tree regardless of the current working
 # directory
-script_dir = os.path.dirname(os.path.abspath(__file__))
-base_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
-OUTPUT_DIR = os.path.join(base_dir, "Geojson")
+script_dir = Path(__file__).resolve().parent
+base_dir = script_dir.parent
+OUTPUT_DIR = base_dir / "Geojson"
 
 
 BASE_URL = "https://webgis1.nic.in/nicstreet/rest/services/admin2024/MapServer"
@@ -161,12 +161,12 @@ def fetch_distinct_state_names(timeout: int = 60) -> list[str]:
     return sorted(set(names))
 
 
-def _export_villages(gdf_vil: gpd.GeoDataFrame, outdir: str, state_name_lower: str) -> tuple[str, str]:
-    vil_path = os.path.join(outdir, f"{state_name_lower}_villages.geojson")
+def _export_villages(gdf_vil: gpd.GeoDataFrame, outdir: Path, state_name_lower: str) -> tuple[Path, Path]:
+    vil_path = outdir / f"{state_name_lower}_villages.geojson"
     gdf_vil.to_file(vil_path, driver="GeoJSON")
     print(f"✓ Saved: {vil_path}")
 
-    csv_path = os.path.join(outdir, f"{state_name_lower}_villages.csv")
+    csv_path = outdir / f"{state_name_lower}_villages.csv"
     attr_cols = [c for c in gdf_vil.columns if c != gdf_vil.geometry.name]
     gdf_vil[attr_cols].to_csv(csv_path, index=False)
     print(f"✓ Saved: {csv_path}")
@@ -184,8 +184,8 @@ def main() -> int:
             return 2
 
     state_input = input("Enter your state name: ").strip()
-    outdir = os.path.abspath(OUTPUT_DIR)
-    os.makedirs(outdir, exist_ok=True)
+    outdir = OUTPUT_DIR.resolve()
+    outdir.mkdir(parents=True, exist_ok=True)
 
     print(f"Downloading '{level}' boundaries for: {state_input}")
     print(f"Output directory: {outdir}")
@@ -221,10 +221,10 @@ def main() -> int:
     minx, miny, maxx, maxy = gdf_state.total_bounds
     bbox_str = f"{minx},{miny},{maxx},{maxy}"
 
-    saved: list[str] = []
+    saved: list[Path] = []
 
     if level in ("state", "all"):
-        state_path = os.path.join(outdir, f"{state_name_lower}_state.geojson")
+        state_path = outdir / f"{state_name_lower}_state.geojson"
         gdf_state.to_file(state_path, driver="GeoJSON")
         print(f"✓ Saved: {state_path}")
         saved.append(state_path)
@@ -242,7 +242,7 @@ def main() -> int:
         gdf_dist = gpd.GeoDataFrame.from_features(dist_fc, crs="EPSG:4326")
         if not gdf_dist.empty:
             gdf_dist = gpd.clip(gdf_dist, gdf_state)
-        dist_path = os.path.join(outdir, f"{state_name_lower}_districts.geojson")
+        dist_path = outdir / f"{state_name_lower}_districts.geojson"
         gdf_dist.to_file(dist_path, driver="GeoJSON")
         print(f"✓ Saved: {dist_path}")
         saved.append(dist_path)
@@ -260,7 +260,7 @@ def main() -> int:
         gdf_subdist = gpd.GeoDataFrame.from_features(subdist_fc, crs="EPSG:4326")
         if not gdf_subdist.empty:
             gdf_subdist = gpd.clip(gdf_subdist, gdf_state)
-        subdist_path = os.path.join(outdir, f"{state_name_lower}_subdistricts.geojson")
+        subdist_path = outdir / f"{state_name_lower}_subdistricts.geojson"
         gdf_subdist.to_file(subdist_path, driver="GeoJSON")
         print(f"✓ Saved: {subdist_path}")
         saved.append(subdist_path)

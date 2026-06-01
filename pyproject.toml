@@ -68,7 +68,6 @@ ignore = [
     "ISC001", "PERF203", "PLR091", "Q000", "D1",
     "T201",  # `print` is the CLI's user-facing output channel.
     "TRY003",  # Validation messages live at the raise site; custom exception classes would be overkill.
-    "PTH",  # os.path -> pathlib migration deferred to a focused follow-up PR (touches the I/O layer in every module).
 ]
 
 [tool.ruff.lint.pep8-naming]

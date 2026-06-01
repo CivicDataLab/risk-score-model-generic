@@ -1,6 +1,3 @@
-import glob
-import os
-
 import numpy as np
 import pandas as pd
 
@@ -98,7 +95,7 @@ def main(config_dir=None, data_dir=None):
 
     data_dir = resolve_data_dir(data_dir)
 
-    factor_files = glob.glob(os.path.join(data_dir, "factor_scores_l1*.csv"))
+    factor_files = sorted(data_dir.glob("factor_scores_l1*.csv"))
 
     # Extra per-unit columns to carry through from the factor files (only those
     # actually present are kept), used downstream for display/diagnostics.
@@ -119,7 +116,7 @@ def main(config_dir=None, data_dir=None):
         if var in merged_df.columns:
             merged_df[var + "_fy_cumsum"] = merged_df.groupby([object_id_col, FINANCIAL_YEAR_COL])[var].cumsum()
 
-    dist_ids = pd.read_csv(os.path.join(data_dir, DISTRICT_LOOKUP_FILE))
+    dist_ids = pd.read_csv(data_dir / DISTRICT_LOOKUP_FILE)
     # Match the kebab-case naming applied to the block-level result below, so the
     # district lookup id lands in the same column as the block-level object id
     # rather than a separate snake_case column after the final concat.
@@ -147,7 +144,7 @@ def main(config_dir=None, data_dir=None):
     topsis_result = pd.concat(df_months)
     topsis_result.columns = [_kebab(col) for col in topsis_result.columns]
 
-    topsis_result.to_csv(os.path.join(data_dir, RISK_SCORE_FILE), index=False)
+    topsis_result.to_csv(data_dir / RISK_SCORE_FILE, index=False)
 
     dist_vul = _district_factor_score(
         topsis_result,
@@ -235,5 +232,5 @@ def main(config_dir=None, data_dir=None):
         columns={_kebab(k): _kebab(v) for k, v in cfg.get("renames", {}).items()},
     )
 
-    final.to_csv(os.path.join(data_dir, DISTRICT_RISK_FILE), index=False)
+    final.to_csv(data_dir / DISTRICT_RISK_FILE, index=False)
     print("Risk score computation complete.")

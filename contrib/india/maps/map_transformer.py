@@ -1,29 +1,27 @@
-import glob
-import os
+from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
 
-script_dir = os.getcwd()
-base_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
-geojsons = glob.glob(os.path.join(base_dir, "Geojson", "*.geojson"))
-fname = os.path.basename(geojsons[0])
-state = os.path.splitext(fname)[0].split("_")[0]
+script_dir = Path.cwd()
+base_dir = script_dir.parent
+geojsons = sorted((base_dir / "Geojson").glob("*.geojson"))
+state = geojsons[0].stem.split("_")[0]
 
 # export villages csv
-villages_geojson = os.path.join(base_dir, "Geojson", f"{state}_villages.geojson")
+villages_geojson = base_dir / "Geojson" / f"{state}_villages.geojson"
 villages_gdf = gpd.read_file(villages_geojson)
 
 # build path for the districts geojson of the current state
-district_geojson = os.path.join(base_dir, "Geojson", f"{state}_districts.geojson")
+district_geojson = base_dir / "Geojson" / f"{state}_districts.geojson"
 district = gpd.read_file(district_geojson)
 district["object_id"] = district["stcode11"] + "-" + district["dtcode11"]
-district.to_file(os.path.join(base_dir, "csv", f"{state}_districts.csv"), driver="GeoJSON")  # Fix 1
+district.to_file(base_dir / "csv" / f"{state}_districts.csv", driver="GeoJSON")  # Fix 1
 
-subdistrict_geojson = os.path.join(base_dir, "Geojson", f"{state}_subdistricts.geojson")
+subdistrict_geojson = base_dir / "Geojson" / f"{state}_subdistricts.geojson"
 subdistrict = gpd.read_file(subdistrict_geojson)
 subdistrict["object_id"] = subdistrict["stcode11"] + "-" + subdistrict["dtcode11"] + "-" + subdistrict["sdtcode11"]
-subdistrict.to_file(os.path.join(base_dir, "csv", f"{state}_subdistricts.csv"), driver="GeoJSON")  # Fix 2
+subdistrict.to_file(base_dir / "csv" / f"{state}_subdistricts.csv", driver="GeoJSON")  # Fix 2
 
 
 ### Prepare urban shapefile
@@ -58,7 +56,7 @@ print(f"Urban (CT + OG): {len(urban_gdf)}")
 print(f"Rural          : {len(rural_gdf)}")
 print(f"Total          : {len(village_urban)}")
 
-urban_gdf.to_file(os.path.join(base_dir, "Geojson", f"{state}_urban.geojson"), driver="GeoJSON")
+urban_gdf.to_file(base_dir / "Geojson" / f"{state}_urban.geojson", driver="GeoJSON")
 
 villages_csv = villages_gdf.drop(columns=["geometry"])
-villages_csv.to_csv(os.path.join(base_dir, "csv", f"{state}_villages.csv"), index=False)  # Fix 3
+villages_csv.to_csv(base_dir / "csv" / f"{state}_villages.csv", index=False)  # Fix 3

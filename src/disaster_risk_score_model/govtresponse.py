@@ -1,5 +1,3 @@
-import os
-
 from disaster_risk_score_model.common import (
     FINANCIAL_YEAR_COL,
     GOVTRESPONSE_COL,
@@ -50,6 +48,6 @@ def main(config_dir=None, data_dir=None, input_file=None):
         scored,
         [time_col, object_id_col],
         [class_col],
-        os.path.join(data_path, cfg["output"]["file"]),
+        data_path / cfg["output"]["file"],
     )
     print("Results saved successfully!")
