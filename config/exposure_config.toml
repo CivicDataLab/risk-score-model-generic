@@ -5,8 +5,8 @@
 # Population/household columns to use. Minimum 1 required.
 # MinMax scaling is applied per month, so absolute units do not matter.
 variables = [
-    "sum_population",
-    "total_hhd",
+    "total_population",
+    "total_households",
 ]
 
 [classification]

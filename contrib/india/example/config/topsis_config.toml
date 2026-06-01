@@ -26,11 +26,11 @@ final_output_file    = "contrib/india/example/data/risk_score_district.csv"
 # display indicators. Remove any column not present in your data.
 variables = [
     "total_tender_awarded_value",
-    "SDRF_sanctions_awarded_value",
-    "SDRF_tenders_awarded_value",
-    "Preparedness Measures_tenders_awarded_value",
-    "Immediate Measures_tenders_awarded_value",
-    "Others_tenders_awarded_value",
+    "sdrf_sanctions_awarded_value",
+    "sdrf_tenders_awarded_value",
+    "preparedness_measures_tenders_awarded_value",
+    "immediate_measures_tenders_awarded_value",
+    "others_tenders_awarded_value",
 ]
 
 # District-level indicator columns and their aggregation rules.
@@ -59,39 +59,39 @@ variables = [
 "others-expenditure-value"                            = "sum"
 "sdrf-expenditure-value"                              = "sum"
 "repair-and-restoration-expenditure-value"            = "sum"
-"total-animal-washed-away"                            = "sum"
-"total-animal-affected"                               = "sum"
-"total-house-fully-damaged"                           = "sum"
+"total-animals-washed-away"                            = "sum"
+"total-animals-affected"                               = "sum"
+"total-houses-fully-damaged"                           = "sum"
 "embankments-affected"                                = "sum"
-"roads"                                               = "sum"
-"bridge"                                              = "sum"
-"embankment-breached"                                 = "sum"
-"sum-population"                                      = "sum"
+"roads-damaged"                                       = "sum"
+"bridges-damaged"                                     = "sum"
+"embankments-breached"                                 = "sum"
+"total-population"                                      = "sum"
 "inundation-intensity-sum"                            = "sum"
-"total-hhd"                                           = "sum"
-"human-live-lost"                                     = "sum"
-"sum-aged-population"                                 = "sum"
+"total-households"                                           = "sum"
+"human-lives-lost"                                     = "sum"
+"elderly-population"                                 = "sum"
 "schools-count"                                       = "sum"
 "health-centres-count"                                = "sum"
 "road-length"                                         = "sum"
 "rail-length"                                         = "sum"
 "sum-rain"                                            = "sum"
 "rc-area"                                             = "sum"
-"sum-young-population"                                = "sum"
-"net-sown-area-in-hac"                                = "sum"
+"young-population"                                = "sum"
+"net-sown-area-ha"                                = "sum"
 "rail-count"                                          = "sum"
 "population-affected-total"                           = "sum"
 "crop-area"                                           = "sum"
 "relief-camps"                                        = "sum"
 "relief-centers"                                      = "sum"
 "relief-inmates"                                      = "sum"
-"rc-nosanitation-hhds-pct"                            = "mean"
+"rc-no-sanitation-households-pct"                            = "mean"
 "drainage-density"                                    = "mean"
 "inundation-pct"                                      = "mean"
 "inundation-intensity-mean-nonzero"                   = "mean"
 "inundation-intensity-mean"                           = "mean"
-"avg-electricity"                                     = "mean"
-"rc-piped-hhds-pct"                                   = "mean"
+"electricity-access"                                     = "mean"
+"rc-piped-water-households-pct"                                   = "mean"
 "mean-sex-ratio"                                      = "mean"
 "mean-rain"                                           = "mean"
 "elevation-mean"                                      = "mean"
@@ -120,20 +120,36 @@ variables = [
 # Decimal places to round output columns to. Omit a column to leave it unrounded.
 [rounding]
 "avg-tele"                          = 1
-"avg-electricity"                   = 1
+"electricity-access"                   = 1
 "mean-sex-ratio"                    = 2
 "inundation-intensity-mean-nonzero" = 2
-"rc-piped-hhds-pct"                 = 2
-"rc-nosanitation-hhds-pct"          = 2
+"rc-piped-water-households-pct"                 = 2
+"rc-no-sanitation-households-pct"          = 2
 "inundation-intensity-sum"          = 2
 "max-rain"                          = 2
 "mean-rain"                         = 2
 "sum-rain"                          = 2
-"sum-aged-population"               = 0
-"sum-young-population"              = 0
-"sum-population"                    = 0
+"elderly-population"               = 0
+"young-population"              = 0
+"total-population"                    = 0
 "rail-length"                       = 0
 "road-length"                       = 0
 "elevation-mean"                    = 0
 "slope-mean"                        = 0
 "crop-area"                         = 0
+
+# Optional, geography-specific post-processing of the final output, applied by
+# topsis_riskscore.py. Column names are the post-rename kebab-case output columns.
+
+# Multiply a column in place by a constant factor (here: fraction -> percentage).
+[derivations.scale]
+"inundation-pct" = 100
+
+# Create a new column as the row-wise sum of components (only if all are present).
+[derivations.sum]
+"total-infrastructure-damage" = ["total-houses-fully-damaged", "roads-damaged", "bridges-damaged"]
+
+# Rename output columns (missing names are ignored). Tenders flagged as
+# "Preparedness Measures" are surfaced on the platform as restoration measures.
+[renames]
+"preparedness-measures-tenders-awarded-value" = "restoration-measures-tenders-awarded-value"

@@ -98,5 +98,5 @@ All factor score scripts read from a single master CSV:
 | `factor_scores_l1_exposure.csv` | Master variables + `exposure` (1–5) |
 | `factor_scores_l1_vulnerability.csv` | Master variables + `vulnerability` (1–5) + `efficiency` |
 | `factor_scores_l1_government-response.csv` | Master variables + `government-response` (1–5) |
-| `risk_score.csv` | All factor scores + `TOPSIS_Score` + `risk-score` (1–5), block level |
+| `risk_score.csv` | All factor scores + `topsis-score` + `risk-score` (1–5), block level |
 | `risk_score_district.csv` | Block rows + district summary rows; platform-ready for IDS-DRR |

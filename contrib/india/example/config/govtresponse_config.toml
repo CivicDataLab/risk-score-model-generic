@@ -8,8 +8,8 @@
 # Financial-year cumulative sums are computed automatically before scoring.
 variables = [
     "total_tender_awarded_value",
-    "SDRF_sanctions_awarded_value",
-    "SDRF_tenders_awarded_value",
+    "sdrf_sanctions_awarded_value",
+    "sdrf_tenders_awarded_value",
 ]
 
 [fiscal_year]

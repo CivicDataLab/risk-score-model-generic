@@ -60,8 +60,8 @@ In addition, each factor score requires its own input variables. The table below
 
 | Column | Description | Min. requirement |
 |--------|-------------|-----------------|
-| `sum_population` | Total estimated population | Any population count |
-| `total_hhd` | Total number of households | Any household count |
+| `total_population` | Total estimated population | Any population count |
+| `total_households` | Total number of households | Any household count |
 
 **Minimum viable:** 1 variable. See [score_exposure.md](./score_exposure.md) for alternative data sources.
 
@@ -78,23 +78,23 @@ Requires two groups of variables:
 | `health_centres_count` | Health centres per administrative unit |
 | `rail_length` | Rail track length per administrative unit |
 | `road_length` | Road length per administrative unit |
-| `net_sown_area_in_hac` | Agricultural sown area |
-| `avg_electricity` | Electricity access score (0–1) |
-| `piped_water_hhds_pct` | Percentage of households with piped water |
-| `no_sanitation_hhds_pct` | Percentage of households without sanitation |
-| `sum_aged_population` | Elderly population per administrative unit |
+| `net_sown_area_ha` | Agricultural sown area |
+| `electricity_access` | Electricity access score (0–1) |
+| `piped_water_households_pct` | Percentage of households with piped water |
+| `no_sanitation_households_pct` | Percentage of households without sanitation |
+| `elderly_population` | Elderly population per administrative unit |
 | `flood_protection_failures` | Failures of flood-protection structures per administrative unit |
 
 **Damage outputs** (observed flood impacts):
 
 | Column | Description |
 |--------|-------------|
-| `Human_Live_Lost` | Deaths per capita |
-| `Population_affected_Total` | Affected population per capita |
-| `Crop_Area` | Damaged crop area / total sown area |
+| `human_lives_lost` | Deaths per capita |
+| `population_affected_total` | Affected population per capita |
+| `crop_area` | Damaged crop area / total sown area |
 | `flood_protection_damaged` | Damage to flood-protection structures per km² |
-| `Roads` | Road damage per km² |
-| `Bridge` | Bridge damage per km² |
+| `roads_damaged` | Road damage per km² |
+| `bridges_damaged` | Bridge damage per km² |
 
 > **If damage data is not available:** The DEA method used for vulnerability scoring requires observed damage data to function correctly. Without it, consider replacing the DEA with a simpler weighted index over the condition variables. See [score_vulnerability.md](./score_vulnerability.md) for detail.
 
@@ -150,7 +150,7 @@ Always review this first. It sets the shared paths and column names used by ever
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
-| `inputs.variables` | `sum_population`, `total_hhd` | You have different population/household columns (min: 1) |
+| `inputs.variables` | `total_population`, `total_households` | You have different population/household columns (min: 1) |
 | `classification.classes` | `[1, 2, 3, 4, 5]` | You want different class labels |
 
 ### `config/vulnerability_config.toml`
@@ -161,7 +161,7 @@ Always review this first. It sets the shared paths and column names used by ever
 | `inputs.damage_vars` | 6 flood damage columns | You have different damage variables (or none — see note below) |
 | `inputs.inverted_inputs` | 6 resilience variables | You change condition_vars — update which variables are inverted |
 | `inputs.neg_inputs` | 3 negative-polarity variables | You change condition_vars |
-| `normalisation.per_capita` | 2 variables ÷ `sum_population` | Update denominators to match your data |
+| `normalisation.per_capita` | 2 variables ÷ `total_population` | Update denominators to match your data |
 | `normalisation.per_area` | 11 variables ÷ `area_sqkm` | Update denominators to match your data |
 | `classification.n_classes` | `5` | You want a different number of vulnerability classes |
 | `classification.damage_threshold` | `0.0001` | You want to change the damage significance threshold |
@@ -226,7 +226,7 @@ After running all scripts, the following files should be present in `data/`:
 | `factor_scores_l1_exposure.csv` | `exposure` column present; values in range 1–5 |
 | `factor_scores_l1_vulnerability.csv` | `vulnerability` column present; values in range 1–5; `efficiency` column in range 0–1 |
 | `factor_scores_l1_government-response.csv` | `government-response` column present; values in range 1–5 |
-| `risk_score.csv` | `risk-score` and `TOPSIS_Score` columns present; no missing values |
+| `risk_score.csv` | `risk-score` and `topsis-score` columns present; no missing values |
 | `risk_score_district.csv` | Contains both block-level and district-level rows |
 
 The hazard script also saves a diagnostic plot (`data/hazard_distribution.png`) showing the class distribution — a roughly decreasing distribution (more low-risk units than high-risk) is expected.

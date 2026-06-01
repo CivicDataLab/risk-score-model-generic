@@ -42,24 +42,24 @@ variables = [
 "disaster-fund-sanctions-value-fy-cumsum"  = "first"
 "flood-protection-failures"                = "sum"
 "flood-protection-damaged"                 = "sum"
-"roads"                                    = "sum"
-"bridge"                                   = "sum"
-"sum-population"                           = "sum"
-"total-hhd"                                = "sum"
+"roads-damaged"                            = "sum"
+"bridges-damaged"                          = "sum"
+"total-population"                         = "sum"
+"total-households"                         = "sum"
 "inundation-intensity-sum"                 = "sum"
-"human-live-lost"                          = "sum"
+"human-lives-lost"                         = "sum"
 "population-affected-total"                = "sum"
 "crop-area"                                = "sum"
-"sum-aged-population"                       = "sum"
+"elderly-population"                        = "sum"
 "schools-count"                            = "sum"
 "health-centres-count"                     = "sum"
 "road-length"                              = "sum"
 "rail-length"                              = "sum"
 "area-sqkm"                                = "sum"
-"net-sown-area-in-hac"                     = "sum"
-"no-sanitation-hhds-pct"                   = "mean"
-"piped-water-hhds-pct"                     = "mean"
-"avg-electricity"                          = "mean"
+"net-sown-area-ha"                         = "sum"
+"no-sanitation-households-pct"             = "mean"
+"piped-water-households-pct"               = "mean"
+"electricity-access"                       = "mean"
 "mean-sex-ratio"                           = "mean"
 "drainage-density"                         = "mean"
 "inundation-intensity-mean-nonzero"        = "mean"
@@ -71,16 +71,30 @@ variables = [
 
 # Decimal places to round output columns to. Omit a column to leave it unrounded.
 [rounding]
-"avg-electricity"                   = 1
+"electricity-access"                = 1
 "mean-sex-ratio"                    = 2
-"piped-water-hhds-pct"              = 2
-"no-sanitation-hhds-pct"            = 2
+"piped-water-households-pct"        = 2
+"no-sanitation-households-pct"      = 2
 "inundation-intensity-mean-nonzero" = 2
 "inundation-intensity-sum"          = 2
 "max-rain"                          = 2
 "mean-rain"                         = 2
-"sum-aged-population"               = 0
-"sum-population"                    = 0
+"elderly-population"                = 0
+"total-population"                  = 0
 "rail-length"                       = 0
 "road-length"                       = 0
 "crop-area"                         = 0
+
+# Optional, geography-specific post-processing of the final output. These
+# sections are read by topsis_riskscore.py and are entirely optional — the
+# generic model defines none, so nothing extra runs. Column names are the
+# post-rename kebab-case output columns. See contrib/india/example for usage.
+#
+# [derivations.scale]      # multiply a column in place by a constant factor
+# "inundation-pct" = 100   # e.g. convert a 0-1 fraction to a percentage
+#
+# [derivations.sum]        # new column = row-wise sum of components (only if all present)
+# "total-infrastructure-damage" = ["roads-damaged", "bridges-damaged"]
+#
+# [renames]                # rename output columns (missing names ignored)
+# "old-column-name" = "new-column-name"

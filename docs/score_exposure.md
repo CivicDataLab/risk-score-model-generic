@@ -80,8 +80,8 @@ The composite score is classified using the month's mean (μ) and standard devia
 
 | Column | Description | Minimum Requirement |
 |--------|-------------|---------------------|
-| `sum_population` | Total estimated population in the unit | Any population count (census, modelled) |
-| `total_hhd` | Total number of households in the unit | Any household count |
+| `total_population` | Total estimated population in the unit | Any population count (census, modelled) |
+| `total_households` | Total number of households in the unit | Any household count |
 
 **Minimum viable configuration:** 1 variable is sufficient; the model works with any combination of population-type measures.
 
@@ -89,8 +89,8 @@ The composite score is classified using the month's mean (μ) and standard devia
 
 | Variable | Alternative sources acceptable |
 |----------|-------------------------------|
-| `sum_population` | WorldPop, GPWv4, census block statistics, GHSL population grid, LandScan |
-| `total_hhd` | National census household tables, Antyodaya survey HHD counts, proxy derived from population / average household size |
+| `total_population` | WorldPop, GPWv4, census block statistics, GHSL population grid, LandScan |
+| `total_households` | National census household tables, Antyodaya survey HHD counts, proxy derived from population / average household size |
 
 **Note on normalisation:** Because MinMax scaling is applied per month and the classification uses relative std-dev bands, the absolute units of the input variables do not matter — only the relative spatial distribution within a month.
 

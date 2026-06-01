@@ -73,6 +73,31 @@ The scoring methodology (factor weights, normalisation approach, DEA setup, TOPS
 
 ---
 
+## Naming conventions
+
+A single convention keeps the data dictionary, configs, and outputs consistent —
+important for a machine-readable Digital Public Good.
+
+- **Inputs, config keys, intermediate columns, and Python identifiers use
+  `snake_case`** — lowercase words separated by underscores (e.g.
+  `total_population`, `net_sown_area_ha`, `flood_protection_failures`). Avoid
+  spaces, capitals, and unexplained abbreviations in column names.
+- **Output / platform-display columns use `kebab-case`** — lowercase words
+  separated by hyphens (e.g. `flood-hazard`, `risk-score`,
+  `total-population`). The TOPSIS step produces these automatically by applying
+  `name.lower().replace("_", "-").replace(" ", "-")` to every column, so a
+  well-named `snake_case` input maps cleanly to its `kebab-case` output.
+- **`data/data_dictionary.csv` is the authoritative list of column slugs.**
+  When you add, remove, or rename a column, update the dictionary in the same PR
+  so the schema contract stays accurate.
+- **Keep geography-specific names out of the generic core** (`config/`,
+  `scripts/`, `data/`). Anything specific to one jurisdiction — scheme acronyms,
+  local administrative units, display-only derivations — belongs in that
+  geography's config under `contrib/` (see the `[derivations]` and `[renames]`
+  sections used by `contrib/india/example/`).
+
+---
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [GNU AGPL v3.0](LICENSE). Sample and derived data contributions are accepted under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).

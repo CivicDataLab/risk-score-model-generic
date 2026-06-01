@@ -84,11 +84,11 @@ def main():
         t = Topsis(evaluation_matrix, weights, criterias)
         t.calc()
         df_month = df_month.copy()
-        df_month["TOPSIS_Score"] = t.worst_similarity
-        df_month = df_month.sort_values(by="TOPSIS_Score", ascending=False)
+        df_month["topsis_score"] = t.worst_similarity
+        df_month = df_month.sort_values(by="topsis_score", ascending=False)
 
         compscore = pd.cut(
-            df_month["TOPSIS_Score"], bins=n_bins, precision=0,
+            df_month["topsis_score"], bins=n_bins, precision=0,
             labels=list(range(1, n_bins + 1)),
         )
         df_month["risk-score"] = compscore
@@ -152,22 +152,24 @@ def main():
 
     final = apply_rounding_rules(final, rounding_rules)
 
-    # Optional display-oriented derivations. These run only when the relevant
-    # input columns are present, so geographies without them are unaffected.
-    if "inundation-pct" in final.columns:
-        final["inundation-pct"] = final["inundation-pct"] * 100
-    damage_components = ["total-house-fully-damaged", "roads", "bridge"]
-    if all(c in final.columns for c in damage_components):
-        final["total-infrastructure-damage"] = final[damage_components].sum(axis=1)
+    # Optional, config-driven post-processing (see the [derivations] and [renames]
+    # sections of the TOPSIS config). All of this is optional: a geography that
+    # omits those sections — as the generic config does — is unaffected. Column
+    # names refer to the post-rename kebab-case output columns. This keeps any
+    # geography-specific display logic in that geography's own config rather than
+    # hardcoded in the shared pipeline.
+    derivations = cfg.get("derivations", {})
+    # Scale a column in place by a constant factor (e.g. fraction -> percentage).
+    for column, factor in derivations.get("scale", {}).items():
+        if column in final.columns:
+            final[column] = final[column] * factor
+    # Create a new column as the row-wise sum of components, only when all are present.
+    for new_column, components in derivations.get("sum", {}).items():
+        if all(c in final.columns for c in components):
+            final[new_column] = final[components].sum(axis=1)
 
-    # Optional column renames; pandas silently ignores names not present.
-    final.rename(
-        columns={
-            "preparedness-measures-tenders-awarded-value": "restoration-measures-tenders-awarded-value",
-            "mean-sexratio": "sexratio",
-        },
-        inplace=True,
-    )
+    # Optional column renames; missing columns are ignored.
+    final.rename(columns=cfg.get("renames", {}), inplace=True)
 
     final.to_csv(
         os.path.join(_RISKMODEL_DIR, cfg["paths"]["final_output_file"]), index=False

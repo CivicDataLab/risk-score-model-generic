@@ -41,7 +41,7 @@ flowchart TD
 
         T4[Step 4: L2 distances\nd+ = distance to best ideal\nd− = distance to worst ideal] --> T5
 
-        T5[Step 5: Similarity score\nTOPSIS_Score = d− / d+ + d−\n0 = like best, 1 = like worst] --> T6
+        T5[Step 5: Similarity score\ntopsis_score = d− / d+ + d−\n0 = like best, 1 = like worst] --> T6
 
         T6[pd.cut into 5 equal bins\nrisk-score 1–5]
     end
@@ -126,7 +126,7 @@ d−_i = sqrt(Σ_j (v_ij − A−_j)²)   # distance to worst (best case)
 ### Step 6 — Similarity Score
 
 ```
-TOPSIS_Score_i = d−_i / (d+_i + d−_i)
+topsis_score_i = d−_i / (d+_i + d−_i)
 ```
 
 Score ranges from 0 (most similar to best ideal = lowest risk) to 1 (most similar to worst ideal = highest risk).
@@ -134,7 +134,7 @@ Score ranges from 0 (most similar to best ideal = lowest risk) to 1 (most simila
 ### Classification
 
 ```python
-risk-score = pd.cut(TOPSIS_Score, bins=5, labels=[1,2,3,4,5])
+risk-score = pd.cut(topsis_score, bins=5, labels=[1,2,3,4,5])
 ```
 
 Equal-width bins divide the 0–1 range into 5 risk classes.
@@ -201,7 +201,7 @@ Contains all merged factor score data plus:
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `TOPSIS_Score` | Float (0–1) | Raw TOPSIS similarity score |
+| `topsis-score` | Float (0–1) | Raw TOPSIS similarity score |
 | `risk-score` | Integer (1–5) | Composite risk class |
 | `financial-year` | String | Fiscal year label |
 | `*-fy-cumsum` | Float | Financial year cumulative tender values |
@@ -214,9 +214,13 @@ Contains both block-level rows and district-level summary rows, with:
 
 - All columns from `risk_score.csv`
 - District-aggregated factor scores and indicators
-- `total-infrastructure-damage` = `total-house-fully-damaged` + `roads` + `bridge`
-- `inundation-pct` expressed as percentage (× 100)
-- Rounding applied per column (see `rounding_rules` dict in script)
+- Rounding applied per column (see the `[rounding]` section of the config)
+- Optional, geography-specific derived/renamed columns from the `[derivations]`
+  and `[renames]` config sections (the generic model defines none). For example,
+  the India reference example derives
+  `total-infrastructure-damage` = `total-houses-fully-damaged` + `roads-damaged` + `bridges-damaged`,
+  expresses `inundation-pct` as a percentage (× 100), and renames
+  `preparedness-measures-tenders-awarded-value` → `restoration-measures-tenders-awarded-value`.
 
 ---
 
@@ -231,6 +235,7 @@ All settings are in `config/topsis_config.toml`. No Python edits are needed.
 | District lookup | `data/district_objectid.csv` | Replace with local district-to-ID mapping |
 | Indicator columns and aggregation | `topsis_config.toml` → `[indicators]` | Remove rows for columns absent in your data; add new rows for additional columns |
 | Output rounding | `topsis_config.toml` → `[rounding]` | Column name → decimal places |
-| Fiscal year logic (response score) | `govtresponse_config.toml` → `fiscal_year.start_month` | Month number when fiscal year starts (default `4` for April) |
+| Derived / renamed output columns | `topsis_config.toml` → `[derivations]`, `[renames]` | Optional display-only column derivations and renames (geography-specific; omit if not needed) |
+| Fiscal year logic (response score) | `govtresponse_config.toml` → `fiscal_year.start_month` | Month number when fiscal year starts (default `1` for January; the India example uses `4` for April) |
 
 For a full step-by-step guide covering all factor scripts, see [getting_started.md](./getting_started.md).
