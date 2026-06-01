@@ -1,4 +1,5 @@
-"""Command-line interface for the disaster risk-score model.
+"""
+Command-line interface for the disaster risk-score model.
 
 Exposes one console command, ``drsm`` (also runnable as
 ``python -m disaster_risk_score_model``), with a subcommand per pipeline stage
@@ -59,8 +60,7 @@ def main(argv=None):
     input_opt = argparse.ArgumentParser(add_help=False)
     input_opt.add_argument(
         "--input-file",
-        help="master input filename under the data dir "
-        "(default: $RISK_MODEL_INPUT_FILE or MASTER_VARIABLES.csv).",
+        help="master input filename under the data dir (default: $RISK_MODEL_INPUT_FILE or MASTER_VARIABLES.csv).",
     )
 
     p_init = sub.add_parser("init-config", help="scaffold an editable config directory.")

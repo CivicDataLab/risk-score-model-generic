@@ -1,4 +1,5 @@
-"""Configuration loading and I/O-location resolution.
+"""
+Configuration loading and I/O-location resolution.
 
 Configuration is split across two TOML files in a config directory:
 
@@ -20,9 +21,9 @@ I/O *locations* are not configured in TOML — they come from the CLI/env via
 against data anywhere.
 """
 
-import importlib.resources as resources
 import os
 import tomllib
+from importlib import resources
 
 # The factor names whose sections live in scores_config.toml. The shared
 # [columns] table is merged into every returned config.
@@ -33,7 +34,8 @@ _TEMPLATE_FILES = (_SCORES_FILE, _TOPSIS_FILE)
 
 
 def resolve_config_dir(config_dir: str | None = None) -> str:
-    """Resolve the config directory, or raise if none can be found.
+    """
+    Resolve the config directory, or raise if none can be found.
 
     Order: explicit ``config_dir`` argument, then ``RISK_MODEL_CONFIG_DIR``,
     then a ``config`` directory in the current working directory.
@@ -47,8 +49,7 @@ def resolve_config_dir(config_dir: str | None = None) -> str:
     if os.path.isdir(cwd_config):
         return cwd_config
     raise FileNotFoundError(
-        "no config found. Run: drsm init-config ./config "
-        "(or pass --config-dir PATH, or set RISK_MODEL_CONFIG_DIR)."
+        "no config found. Run: drsm init-config ./config (or pass --config-dir PATH, or set RISK_MODEL_CONFIG_DIR)."
     )
 
 
@@ -58,7 +59,8 @@ def _read_toml(config_dir: str, filename: str) -> dict:
 
 
 def load_config(name: str, config_dir: str | None = None) -> dict:
-    """Load the config for one pipeline stage.
+    """
+    Load the config for one pipeline stage.
 
     ``name`` is one of ``hazard``, ``exposure``, ``vulnerability``,
     ``govtresponse`` or ``topsis``. The shared ``[columns]`` table (the single
@@ -76,14 +78,9 @@ def load_config(name: str, config_dir: str | None = None) -> dict:
         return {"columns": columns, **_read_toml(cfg_dir, _TOPSIS_FILE)}
 
     if name not in _SCORE_FACTORS:
-        raise ValueError(
-            f"Unknown config section {name!r}; expected one of "
-            f"{', '.join((*_SCORE_FACTORS, 'topsis'))}."
-        )
+        raise ValueError(f"Unknown config section {name!r}; expected one of {', '.join((*_SCORE_FACTORS, 'topsis'))}.")
     if name not in scores:
-        raise KeyError(
-            f"Section [{name}] not found in {os.path.join(cfg_dir, _SCORES_FILE)}."
-        )
+        raise KeyError(f"Section [{name}] not found in {os.path.join(cfg_dir, _SCORES_FILE)}.")
     return {"columns": columns, **scores[name]}
 
 
@@ -104,7 +101,8 @@ def init_config(dest_dir: str) -> None:
 
 
 def resolve_data_dir(data_dir: str | None = None) -> str:
-    """Resolve the data directory for all inputs and outputs.
+    """
+    Resolve the data directory for all inputs and outputs.
 
     Order: explicit ``data_dir`` argument, then ``RISK_MODEL_DATA_DIR``, then
     ``./data`` in the current working directory.
@@ -118,7 +116,8 @@ def resolve_data_dir(data_dir: str | None = None) -> str:
 
 
 def resolve_input_file(input_file: str | None = None) -> str:
-    """Resolve the master input filename (a bare name joined under the data dir).
+    """
+    Resolve the master input filename (a bare name joined under the data dir).
 
     Order: explicit ``input_file`` argument, then ``RISK_MODEL_INPUT_FILE``,
     then ``MASTER_VARIABLES.csv``.

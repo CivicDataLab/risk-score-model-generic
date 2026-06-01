@@ -4,7 +4,6 @@ import os
 import numpy as np
 import pandas as pd
 
-from disaster_risk_score_model.config import load_config, resolve_data_dir
 from disaster_risk_score_model.common import (
     DISTRICT_LOOKUP_FILE,
     DISTRICT_RISK_FILE,
@@ -17,6 +16,7 @@ from disaster_risk_score_model.common import (
     RISK_SCORE_FILE,
     VULNERABILITY_COL,
 )
+from disaster_risk_score_model.config import load_config, resolve_data_dir
 
 # Each factor's output column paired with its weight key in [weights]. One ordered
 # source of truth so the evaluation-matrix columns and the weight vector cannot
@@ -30,7 +30,8 @@ FACTOR_WEIGHTS = [
 
 
 def topsis(evaluation_matrix, weight_matrix):
-    """Score alternatives by TOPSIS closeness to the worst condition.
+    """
+    Score alternatives by TOPSIS closeness to the worst condition.
 
     Given an m-alternatives x n-criteria evaluation matrix and criteria weights,
     returns the closeness of each alternative to the worst condition, used as the
@@ -108,19 +109,15 @@ def main(config_dir=None, data_dir=None):
         df = pd.read_csv(path)
         selected = [c for c in factor_cols if c in df.columns]
         selected_extra = [c for c in additional_columns if c in df.columns]
-        df = df[selected + [object_id_col, time_col] + selected_extra]
-        merged_df = pd.merge(
-            merged_df, df, on=[object_id_col, time_col], how="inner", suffixes=("", "_drop")
-        )
+        df = df[[*selected, object_id_col, time_col, *selected_extra]]
+        merged_df = merged_df.merge(df, on=[object_id_col, time_col], how="inner", suffixes=("", "_drop"))
         merged_df = merged_df.loc[:, ~merged_df.columns.str.endswith("_drop")]
 
-    merged_df.sort_values(by=[object_id_col, FINANCIAL_YEAR_COL, time_col], inplace=True)
+    merged_df = merged_df.sort_values(by=[object_id_col, FINANCIAL_YEAR_COL, time_col])
 
     for var in cumulative_vars:
         if var in merged_df.columns:
-            merged_df[var + "_fy_cumsum"] = merged_df.groupby(
-                [object_id_col, FINANCIAL_YEAR_COL]
-            )[var].cumsum()
+            merged_df[var + "_fy_cumsum"] = merged_df.groupby([object_id_col, FINANCIAL_YEAR_COL])[var].cumsum()
 
     dist_ids = pd.read_csv(os.path.join(data_dir, DISTRICT_LOOKUP_FILE))
     # Match the kebab-case naming applied to the block-level result below, so the
@@ -139,7 +136,9 @@ def main(config_dir=None, data_dir=None):
         df_month = df_month.sort_values(by="topsis_score", ascending=False)
 
         compscore = pd.cut(
-            df_month["topsis_score"], bins=n_bins, precision=0,
+            df_month["topsis_score"],
+            bins=n_bins,
+            precision=0,
             labels=list(range(1, n_bins + 1)),
         )
         df_month["risk-score"] = compscore
@@ -148,46 +147,54 @@ def main(config_dir=None, data_dir=None):
     topsis_result = pd.concat(df_months)
     topsis_result.columns = [_kebab(col) for col in topsis_result.columns]
 
-    topsis_result.to_csv(
-        os.path.join(data_dir, RISK_SCORE_FILE), index=False
-    )
+    topsis_result.to_csv(os.path.join(data_dir, RISK_SCORE_FILE), index=False)
 
     dist_vul = _district_factor_score(
-        topsis_result, VULNERABILITY_COL, dist_ids, n_bins, compositescorelabels,
-        district_out, time_out,
+        topsis_result,
+        VULNERABILITY_COL,
+        dist_ids,
+        n_bins,
+        compositescorelabels,
+        district_out,
+        time_out,
     )
     dist_exp = _district_factor_score(
-        topsis_result, EXPOSURE_COL, dist_ids, n_bins, compositescorelabels,
-        district_out, time_out,
+        topsis_result,
+        EXPOSURE_COL,
+        dist_ids,
+        n_bins,
+        compositescorelabels,
+        district_out,
+        time_out,
     )
     dist_govt = _district_factor_score(
-        topsis_result, GOVTRESPONSE_COL, dist_ids, n_bins, compositescorelabels,
-        district_out, time_out,
+        topsis_result,
+        GOVTRESPONSE_COL,
+        dist_ids,
+        n_bins,
+        compositescorelabels,
+        district_out,
+        time_out,
     )
     dist_haz = _district_factor_score(
-        topsis_result, HAZARD_CLASS_COL, dist_ids, n_bins, compositescorelabels,
-        district_out, time_out,
+        topsis_result,
+        HAZARD_CLASS_COL,
+        dist_ids,
+        n_bins,
+        compositescorelabels,
+        district_out,
+        time_out,
     )
 
     topsis_result["risk-score"] = topsis_result["risk-score"].astype(int)
-    dist_risk = (
-        topsis_result.groupby([district_out, time_out])["risk-score"]
-        .mean()
-        .reset_index()
-    )
-    dist_risk["risk-score"] = pd.cut(
-        dist_risk["risk-score"], bins=n_bins, precision=0, labels=compositescorelabels
-    )
+    dist_risk = topsis_result.groupby([district_out, time_out])["risk-score"].mean().reset_index()
+    dist_risk["risk-score"] = pd.cut(dist_risk["risk-score"], bins=n_bins, precision=0, labels=compositescorelabels)
     dist_risk = dist_risk.merge(dist_ids, on=district_out)
 
     present_indicators = [c for c in indicators if c in topsis_result.columns]
-    present_agg_rules = {
-        k: v for k, v in aggregation_rules.items() if k in topsis_result.columns
-    }
+    present_agg_rules = {k: v for k, v in aggregation_rules.items() if k in topsis_result.columns}
 
-    dist_indicators = (
-        topsis_result.groupby([district_out, time_out]).agg(present_agg_rules).reset_index()
-    )
+    dist_indicators = topsis_result.groupby([district_out, time_out]).agg(present_agg_rules).reset_index()
 
     dist = pd.concat(
         [
@@ -213,23 +220,20 @@ def main(config_dir=None, data_dir=None):
     # own config rather than hardcoded in the shared pipeline.
     derivations = cfg.get("derivations", {})
     # Scale a column in place by a constant factor (e.g. fraction -> percentage).
-    for column, factor in derivations.get("scale", {}).items():
-        column = _kebab(column)
+    for raw_column, factor in derivations.get("scale", {}).items():
+        column = _kebab(raw_column)
         if column in final.columns:
             final[column] = final[column] * factor
     # Create a new column as the row-wise sum of components, only when all are present.
-    for new_column, components in derivations.get("sum", {}).items():
-        components = [_kebab(c) for c in components]
+    for new_column, raw_components in derivations.get("sum", {}).items():
+        components = [_kebab(c) for c in raw_components]
         if all(c in final.columns for c in components):
             final[_kebab(new_column)] = final[components].sum(axis=1)
 
     # Optional column renames; missing columns are ignored.
-    final.rename(
+    final = final.rename(
         columns={_kebab(k): _kebab(v) for k, v in cfg.get("renames", {}).items()},
-        inplace=True,
     )
 
-    final.to_csv(
-        os.path.join(data_dir, DISTRICT_RISK_FILE), index=False
-    )
+    final.to_csv(os.path.join(data_dir, DISTRICT_RISK_FILE), index=False)
     print("Risk score computation complete.")

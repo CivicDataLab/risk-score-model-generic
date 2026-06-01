@@ -114,7 +114,7 @@ A+ (best ideal)  = max of each column (highest risk scenario)
 A− (worst ideal) = min of each column (lowest risk scenario)
 ```
 
-> `criterias = [True, True, True, True]` — all set to benefit criteria (higher = closer to worst).
+> `criteria = [True, True, True, True]` — all set to benefit criteria (higher = closer to worst).
 
 ### Step 5 — L2 Distances
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # SPDX-License-Identifier: MIT
 #
 # Data Envelopment Analysis (DEA) routines using open-source LP solvers.
@@ -12,7 +11,8 @@
 # Original algorithmic structure adapted from:
 #   https://github.com/wurmen/DEA
 
-"""Data Envelopment Analysis (DEA) using open-source LP solvers.
+"""
+Data Envelopment Analysis (DEA) using open-source LP solvers.
 
 Public API
 ----------
@@ -38,24 +38,27 @@ identifiers into this routine.
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Sequence, Tuple
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from pulp import (
+    PULP_CBC_CMD,
     LpMaximize,
     LpProblem,
     LpStatus,
     LpStatusOptimal,
     LpVariable,
-    PULP_CBC_CMD,
     lpSum,
     value,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 logger = logging.getLogger(__name__)
 
 # Type aliases for clarity
-DMUData = Dict[str, List[float]]
+DMUData = dict[str, list[float]]
 
 
 # ---------------------------------------------------------------------------
@@ -72,8 +75,7 @@ def _solve_or_raise(prob: LpProblem, dmu: str) -> float:
     status = prob.solve(_CBC)
     if status != LpStatusOptimal:
         raise RuntimeError(
-            f"LP for DMU {dmu!r} terminated with status "
-            f"{LpStatus[status]!r}; cannot report efficiency."
+            f"LP for DMU {dmu!r} terminated with status {LpStatus[status]!r}; cannot report efficiency."
         )
     obj = value(prob.objective)
     if obj is None:
@@ -81,9 +83,7 @@ def _solve_or_raise(prob: LpProblem, dmu: str) -> float:
     return float(obj)
 
 
-def _validate_shapes(
-    dmus: Sequence[str], x: DMUData, y: DMUData
-) -> Tuple[int, int]:
+def _validate_shapes(dmus: Sequence[str], x: DMUData, y: DMUData) -> tuple[int, int]:
     """Check that all DMUs share a consistent input/output dimensionality."""
     if not dmus:
         raise ValueError("No DMUs supplied.")
@@ -91,17 +91,13 @@ def _validate_shapes(
     n_out = len(y[dmus[0]])
     for k in dmus:
         if len(x[k]) != n_in:
-            raise ValueError(
-                f"DMU {k!r} has {len(x[k])} inputs, expected {n_in}."
-            )
+            raise ValueError(f"DMU {k!r} has {len(x[k])} inputs, expected {n_in}.")
         if len(y[k]) != n_out:
-            raise ValueError(
-                f"DMU {k!r} has {len(y[k])} outputs, expected {n_out}."
-            )
+            raise ValueError(f"DMU {k!r} has {len(y[k])} outputs, expected {n_out}.")
     return n_in, n_out
 
 
-def _result_frame(rows: List[Tuple[str, float]]) -> pd.DataFrame:
+def _result_frame(rows: list[tuple[str, float]]) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["DMU", "efficiency"])
 
 
@@ -109,10 +105,12 @@ def _result_frame(rows: List[Tuple[str, float]]) -> pd.DataFrame:
 # CRS (Charnes-Cooper-Rhodes) model
 # ---------------------------------------------------------------------------
 
+
 def CRS(  # noqa: N802 - keep historical capitalisation for API compatibility
     DMU: Sequence[str], X: DMUData, Y: DMUData
 ) -> pd.DataFrame:
-    """Input-oriented CRS DEA, multiplier (primal) form.
+    """
+    Input-oriented CRS DEA, multiplier (primal) form.
 
     Parameters
     ----------
@@ -125,9 +123,10 @@ def CRS(  # noqa: N802 - keep historical capitalisation for API compatibility
     -------
     pandas.DataFrame
         Columns ``['DMU', 'efficiency']``; efficiency in ``(0, 1]``.
+
     """
     n_in, n_out = _validate_shapes(DMU, X, Y)
-    rows: List[Tuple[str, float]] = []
+    rows: list[tuple[str, float]] = []
     for r in DMU:
         prob = LpProblem(f"CRS_in_primal_{r}", LpMaximize)
         v = [LpVariable(f"v_{i}", lowBound=0) for i in range(n_in)]
@@ -135,11 +134,7 @@ def CRS(  # noqa: N802 - keep historical capitalisation for API compatibility
         prob += lpSum(u[j] * Y[r][j] for j in range(n_out))
         prob += lpSum(v[i] * X[r][i] for i in range(n_in)) == 1
         for k in DMU:
-            prob += (
-                lpSum(u[j] * Y[k][j] for j in range(n_out))
-                - lpSum(v[i] * X[k][i] for i in range(n_in))
-                <= 0
-            )
+            prob += lpSum(u[j] * Y[k][j] for j in range(n_out)) - lpSum(v[i] * X[k][i] for i in range(n_in)) <= 0
         rows.append((r, _solve_or_raise(prob, r)))
     return _result_frame(rows)
 

@@ -1,4 +1,5 @@
-"""Generate a small, geography-neutral synthetic sample dataset.
+"""
+Generate a small, geography-neutral synthetic sample dataset.
 
 This module produces the synthetic sample inputs that let the risk-score model
 run end-to-end without first running a real data pipeline:
@@ -53,7 +54,8 @@ def _season_factor(month: int) -> float:
 
 
 def build_units():
-    """Return (units, district_lookup_rows).
+    """
+    Return (units, district_lookup_rows).
 
     units: list of dicts with object_id, district, district_object_id and a
     set of static per-unit characteristics.

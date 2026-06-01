@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from disaster_risk_score_model.config import load_config
 from disaster_risk_score_model.common import (
     HAZARD_CLASS_COL,
     HAZARD_FLOAT_COL,
@@ -13,6 +12,11 @@ from disaster_risk_score_model.common import (
     merge_and_save,
     score_by_month,
 )
+from disaster_risk_score_model.config import load_config
+
+# The model fixes the hazard scale at five classes (see classify_std_intervals
+# in common.py, which makes the same assumption).
+EXPECTED_HAZARD_CLASSES = 5
 
 
 def calculate_hazard_scores(df, cfg):
@@ -32,10 +36,9 @@ def calculate_hazard_scores(df, cfg):
     thresholds = [df[float_col].quantile(q) for q in cfg["classification"]["quantile_thresholds"]]
 
     conditions = [df[float_col] <= thresholds[0]]
-    for i in range(len(thresholds) - 1):
-        conditions.append(
-            (df[float_col] > thresholds[i]) & (df[float_col] <= thresholds[i + 1])
-        )
+    conditions.extend(
+        (df[float_col] > thresholds[i]) & (df[float_col] <= thresholds[i + 1]) for i in range(len(thresholds) - 1)
+    )
     conditions.append(df[float_col] > thresholds[-1])
 
     df[class_col] = np.select(conditions, cfg["classification"]["classes"], default=1)
@@ -50,7 +53,7 @@ def plot_hazard_distribution(df, cfg, output_path=None):
     class_col = HAZARD_CLASS_COL
     figsize = cfg["plot"]["figsize"]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+    _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
     sns.countplot(data=df, x=class_col, ax=ax1, color="steelblue")
     ax1.set_title("Distribution of Flood Hazard Classes", pad=15)
@@ -60,7 +63,9 @@ def plot_hazard_distribution(df, cfg, output_path=None):
         ax1.annotate(
             f"{int(p.get_height()):,}",
             (p.get_x() + p.get_width() / 2.0, p.get_height()),
-            ha="center", va="bottom", fontsize=10,
+            ha="center",
+            va="bottom",
+            fontsize=10,
         )
 
     sns.boxplot(data=df, x=class_col, y=float_col, ax=ax2, color="lightblue")
@@ -75,20 +80,20 @@ def plot_hazard_distribution(df, cfg, output_path=None):
     plt.show()
 
 
-def validate_hazard_distribution(df, cfg):
+def validate_hazard_distribution(df):
     class_col = HAZARD_CLASS_COL
     dist = df[class_col].value_counts().sort_index()
     total = len(df)
 
     print("\nHazard Distribution Validation:")
     print("-" * 40)
-    for class_num in range(1, 6):
+    for class_num in range(1, EXPECTED_HAZARD_CLASSES + 1):
         count = dist.get(class_num, 0)
         print(f"Class {class_num}: {count:,} ({count / total * 100:.1f}%)")
 
     checks = {
-        "All classes present": len(dist) == 5,
-        "Class range valid": df[class_col].between(1, 5).all(),
+        "All classes present": len(dist) == EXPECTED_HAZARD_CLASSES,
+        "Class range valid": df[class_col].between(1, EXPECTED_HAZARD_CLASSES).all(),
         "Decreasing trend": dist.iloc[0] > dist.iloc[-1],
         "No missing values": df[class_col].notna().all(),
     }
@@ -126,22 +131,29 @@ def main(config_dir=None, data_dir=None, input_file=None):
     print_variable_statistics(master, hazard_vars)
 
     scored = score_by_month(
-        master, hazard_vars, time_col, object_id_col,
+        master,
+        hazard_vars,
+        time_col,
+        object_id_col,
         lambda d: calculate_hazard_scores(d, cfg),
     )
     master = merge_and_save(
-        master, scored, [time_col, object_id_col], [class_col, float_col],
+        master,
+        scored,
+        [time_col, object_id_col],
+        [class_col, float_col],
         os.path.join(data_path, cfg["output"]["file"]),
     )
 
-    is_valid = validate_hazard_distribution(master, cfg)
+    is_valid = validate_hazard_distribution(master)
     if is_valid:
         print("\nHazard distribution passes all validation checks!")
     else:
         print("\nWarning: Some validation checks failed. Please review the distribution.")
 
     plot_hazard_distribution(
-        master, cfg,
+        master,
+        cfg,
         os.path.join(data_path, cfg["output"]["plot_file"]),
     )
 

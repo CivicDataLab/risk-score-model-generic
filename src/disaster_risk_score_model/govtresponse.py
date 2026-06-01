@@ -1,6 +1,5 @@
 import os
 
-from disaster_risk_score_model.config import load_config
 from disaster_risk_score_model.common import (
     FINANCIAL_YEAR_COL,
     GOVTRESPONSE_COL,
@@ -9,6 +8,7 @@ from disaster_risk_score_model.common import (
     merge_and_save,
     score_by_month,
 )
+from disaster_risk_score_model.config import load_config
 
 
 def get_financial_year(timeperiod, start_month):
@@ -32,20 +32,24 @@ def main(config_dir=None, data_dir=None, input_file=None):
 
     master, data_path = load_master(data_dir, input_file)
 
-    master[fy_col] = master[time_col].apply(
-        lambda x: get_financial_year(x, start_month)
-    )
+    master[fy_col] = master[time_col].apply(lambda x: get_financial_year(x, start_month))
 
     # Accumulate spending within each fiscal year before scoring.
     for var in value_vars:
         master[var] = master.groupby([object_id_col, fy_col])[var].cumsum()
 
     scored = score_by_month(
-        master, value_vars, time_col, object_id_col,
+        master,
+        value_vars,
+        time_col,
+        object_id_col,
         lambda d: classify_std_intervals(d, value_vars, classes, class_col),
     )
     merge_and_save(
-        master, scored, [time_col, object_id_col], [class_col],
+        master,
+        scored,
+        [time_col, object_id_col],
+        [class_col],
         os.path.join(data_path, cfg["output"]["file"]),
     )
     print("Results saved successfully!")

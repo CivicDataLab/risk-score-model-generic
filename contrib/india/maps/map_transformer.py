@@ -1,16 +1,14 @@
-import pandas as pd
+import glob
+import os
+
 import geopandas as gpd
 import numpy as np
-import os
-import glob
-import re
-
 
 script_dir = os.getcwd()
 base_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
 geojsons = glob.glob(os.path.join(base_dir, "Geojson", "*.geojson"))
 fname = os.path.basename(geojsons[0])
-state = os.path.splitext(fname)[0].split('_')[0]
+state = os.path.splitext(fname)[0].split("_")[0]
 
 # export villages csv
 villages_geojson = os.path.join(base_dir, "Geojson", f"{state}_villages.geojson")
@@ -30,10 +28,10 @@ subdistrict.to_file(os.path.join(base_dir, "csv", f"{state}_subdistricts.csv"), 
 
 ### Prepare urban shapefile
 village_df_unfiltered = villages_gdf.copy()
-village_urban = village_df_unfiltered.replace(r'^\s*$', np.nan, regex=True)
-village_urban = village_urban.dropna(subset=['vilnam_soi'])
-village_urban = village_urban.dropna(subset=['vilname11'])
-village_urban = village_urban.dropna(subset=['gp_name'])
+village_urban = village_df_unfiltered.replace(r"^\s*$", np.nan, regex=True)
+village_urban = village_urban.dropna(subset=["vilnam_soi"])
+village_urban = village_urban.dropna(subset=["vilname11"])
+village_urban = village_urban.dropna(subset=["gp_name"])
 village_urban = village_urban.loc[village_urban["stname"] == state.upper()]
 village_urban["vilnam_soi"] = village_urban["vilnam_soi"].str.upper()
 village_urban = village_urban[~village_urban["vilnam_soi"].str.contains("FOREST", na=False)]
@@ -44,13 +42,13 @@ village_urban = village_urban[~village_urban["vilnam_soi"].str.contains(" HILL",
 village_urban = village_urban[~village_urban["vilnam_soi"].str.contains("R F", na=False)]
 
 # --- LGD urban classification from vilname11 suffix ---
-suffix_pattern = r'\(([^)]+)\)$'
+suffix_pattern = r"\(([^)]+)\)$"
 village_urban = village_urban.copy()
 village_urban["_ulb_type"] = village_urban["vilname11"].str.extract(suffix_pattern, expand=False)
 
 # CT (Census Town) and OG (Out Growth) are the urban types in the village shapefile.
 # Statutory towns (M Corp., M, etc.) are in a separate town shapefile.
-urban_types = ['M Corp.', 'M', 'NP', 'NPP', 'NAC', 'CB', 'CT', 'OG', 'INA', 'IT']
+urban_types = ["M Corp.", "M", "NP", "NPP", "NAC", "CB", "CT", "OG", "INA", "IT"]
 village_urban["is_urban"] = village_urban["_ulb_type"].isin(urban_types)
 
 urban_gdf = village_urban[village_urban["is_urban"]]
@@ -62,5 +60,5 @@ print(f"Total          : {len(village_urban)}")
 
 urban_gdf.to_file(os.path.join(base_dir, "Geojson", f"{state}_urban.geojson"), driver="GeoJSON")
 
-villages_csv = villages_gdf.drop(columns=['geometry'])
+villages_csv = villages_gdf.drop(columns=["geometry"])
 villages_csv.to_csv(os.path.join(base_dir, "csv", f"{state}_villages.csv"), index=False)  # Fix 3

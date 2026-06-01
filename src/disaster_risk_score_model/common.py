@@ -1,4 +1,5 @@
-"""Shared helpers for the factor-scoring modules.
+"""
+Shared helpers for the factor-scoring modules.
 
 Collects the boilerplate that the per-factor modules (hazard, exposure,
 vulnerability, government-response) otherwise repeat: silencing warnings,
@@ -44,7 +45,8 @@ DISTRICT_RISK_FILE = "risk_score_district.csv"
 
 
 def load_master(data_dir=None, input_file=None):
-    """Read the master variables CSV; return (df, data_dir).
+    """
+    Read the master variables CSV; return (df, data_dir).
 
     The returned ``data_dir`` is the resolved data directory, where callers
     write their output CSV.
@@ -58,9 +60,7 @@ def score_by_month(master, value_vars, time_col, object_id_col, fn):
     """Apply ``fn`` to each month's [value_vars + keys] slice and concat results."""
     results = []
     for month in tqdm(master[time_col].unique()):
-        month_data = master[master[time_col] == month][
-            value_vars + [time_col, object_id_col]
-        ].copy()
+        month_data = master[master[time_col] == month][[*value_vars, time_col, object_id_col]].copy()
         results.append(fn(month_data))
     return pd.concat(results)
 
@@ -73,7 +73,8 @@ def merge_and_save(master, scored, keys, cols, out_path):
 
 
 def classify_std_intervals(df, value_vars, classes, out_col):
-    """MinMaxScaler -> row sum -> mean±std interval bins.
+    """
+    MinMaxScaler -> row sum -> mean±std interval bins.
 
     Shared by exposure and government-response. Assumes ``len(classes) == 5``,
     matching the existing model.

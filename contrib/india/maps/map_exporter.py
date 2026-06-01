@@ -19,6 +19,7 @@ Layers:
 - District boundary: 10
 - Subdistrict boundary: 11
 - Village boundary: 12
+
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import requests
 
@@ -52,7 +53,7 @@ BASE_URL = "https://webgis1.nic.in/nicstreet/rest/services/admin2024/MapServer"
 STATE_LAYER = 9
 DISTRICT_LAYER = 10
 SUBDISTRICT_LAYER = 11
-VILLAGE_LAYER = 12 
+VILLAGE_LAYER = 12
 
 MAX_RECORD_COUNT = 2000  # service maxRecordCount is 2000
 
@@ -65,8 +66,8 @@ def _escape_sql_string(s: str) -> str:
 def arcgis_query_geojson(
     layer_id: int,
     where: str = "1=1",
-    geometry: Optional[str] = None,
-    geometry_type: Optional[str] = None,
+    geometry: str | None = None,
+    geometry_type: str | None = None,
     spatial_rel: str = "esriSpatialRelIntersects",
     in_sr: int = 4326,
     out_sr: int = 4326,
@@ -74,15 +75,16 @@ def arcgis_query_geojson(
     return_geometry: bool = True,
     timeout: int = 60,
     sleep_s: float = 0.1,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
-    Query an ArcGIS REST layer and return GeoJSON FeatureCollection.
+    Query an ArcGIS REST layer and return a GeoJSON FeatureCollection.
+
     Uses pagination (resultOffset/resultRecordCount).
     """
     url = f"{BASE_URL}/{layer_id}/query"
     session = requests.Session()
 
-    all_features: List[Dict[str, Any]] = []
+    all_features: list[dict[str, Any]] = []
     offset = 0
 
     while True:
@@ -112,8 +114,8 @@ def arcgis_query_geojson(
 
         try:
             fc = resp.json()
-        except json.JSONDecodeError:
-            raise RuntimeError(f"Non-JSON response from server for layer {layer_id}: {resp.text[:500]}")
+        except json.JSONDecodeError as err:
+            raise RuntimeError(f"Non-JSON response from server for layer {layer_id}: {resp.text[:500]}") from err
 
         if "error" in fc:
             raise RuntimeError(f"ArcGIS error for layer {layer_id}: {fc['error']}")
@@ -132,10 +134,8 @@ def arcgis_query_geojson(
     return {"type": "FeatureCollection", "features": all_features}
 
 
-def fetch_distinct_state_names(timeout: int = 60) -> List[str]:
-    """
-    Fetch distinct state names from layer 9 (stname).
-    """
+def fetch_distinct_state_names(timeout: int = 60) -> list[str]:
+    """Fetch distinct state names from layer 9 (stname)."""
     url = f"{BASE_URL}/{STATE_LAYER}/query"
     resp = requests.post(
         url,
@@ -156,12 +156,12 @@ def fetch_distinct_state_names(timeout: int = 60) -> List[str]:
     names = []
     for feat in data.get("features", []):
         attrs = feat.get("attributes", {})
-        if "stname" in attrs and attrs["stname"]:
+        if attrs.get("stname"):
             names.append(str(attrs["stname"]))
     return sorted(set(names))
 
 
-def _export_villages(gdf_vil: "gpd.GeoDataFrame", outdir: str, state_name_lower: str) -> tuple[str, str]:
+def _export_villages(gdf_vil: gpd.GeoDataFrame, outdir: str, state_name_lower: str) -> tuple[str, str]:
     vil_path = os.path.join(outdir, f"{state_name_lower}_villages.geojson")
     gdf_vil.to_file(vil_path, driver="GeoJSON")
     print(f"✓ Saved: {vil_path}")
@@ -213,7 +213,9 @@ def main() -> int:
 
     gdf_state = gpd.GeoDataFrame.from_features(state_fc, crs="EPSG:4326")
     state_geom = gdf_state.unary_union
-    gdf_state = gpd.GeoDataFrame(gdf_state.drop(columns="geometry", errors="ignore"), geometry=[state_geom], crs="EPSG:4326")
+    gdf_state = gpd.GeoDataFrame(
+        gdf_state.drop(columns="geometry", errors="ignore"), geometry=[state_geom], crs="EPSG:4326"
+    )
 
     state_name_lower = state_input.lower().replace(" ", "_")
     minx, miny, maxx, maxy = gdf_state.total_bounds

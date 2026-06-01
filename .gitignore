@@ -10,6 +10,12 @@ dist/
 *.egg-info/
 src/*.egg-info/
 
+# Test / tooling artifacts.
+.coverage
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+
 # The top-level data/ is the default --data-dir: a scratch directory for sample
 # inputs (`drsm generate-sample-data`) and pipeline outputs. Nothing in it is
 # version-controlled.

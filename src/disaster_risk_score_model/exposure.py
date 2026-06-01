@@ -1,6 +1,5 @@
 import os
 
-from disaster_risk_score_model.config import load_config
 from disaster_risk_score_model.common import (
     EXPOSURE_COL,
     classify_std_intervals,
@@ -8,6 +7,7 @@ from disaster_risk_score_model.common import (
     merge_and_save,
     score_by_month,
 )
+from disaster_risk_score_model.config import load_config
 
 
 def main(config_dir=None, data_dir=None, input_file=None):
@@ -21,11 +21,17 @@ def main(config_dir=None, data_dir=None, input_file=None):
 
     master, data_path = load_master(data_dir, input_file)
     scored = score_by_month(
-        master, value_vars, time_col, object_id_col,
+        master,
+        value_vars,
+        time_col,
+        object_id_col,
         lambda d: classify_std_intervals(d, value_vars, classes, class_col),
     )
     merge_and_save(
-        master, scored, [time_col, object_id_col], [class_col],
+        master,
+        scored,
+        [time_col, object_id_col],
+        [class_col],
         os.path.join(data_path, cfg["output"]["file"]),
     )
     print("Results saved successfully!")

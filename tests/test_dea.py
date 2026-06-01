@@ -13,8 +13,7 @@ from disaster_risk_score_model import dea
 TOL = 1e-3
 
 DMUS = ["A", "B", "C", "D", "E"]
-X = {"A": [4.0, 3.0], "B": [7.0, 3.0], "C": [8.0, 1.0],
-     "D": [4.0, 2.0], "E": [2.0, 4.0]}
+X = {"A": [4.0, 3.0], "B": [7.0, 3.0], "C": [8.0, 1.0], "D": [4.0, 2.0], "E": [2.0, 4.0]}
 Y = {"A": [1.0], "B": [1.0], "C": [1.0], "D": [1.0], "E": [1.0]}
 
 
@@ -36,5 +35,5 @@ def test_all_zero_output_dmu_is_inefficient():
     x = {"A": [1.0], "B": [1.0]}
     y = {"A": [1.0], "B": [0.0]}
     res = dea.CRS(dmus, x, y)
-    eff = dict(zip(res["DMU"], res["efficiency"]))
+    eff = dict(zip(res["DMU"], res["efficiency"], strict=True))
     assert eff["B"] == pytest.approx(0.0, abs=TOL)

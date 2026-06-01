@@ -1,4 +1,5 @@
-"""Intelligent Data Solution for Disaster Risk Reduction (IDS-DRR).
+"""
+Intelligent Data Solution for Disaster Risk Reduction (IDS-DRR).
 
 A configurable, geography-neutral pipeline that computes flood risk scores from
 publicly available data. See the ``drsm`` command-line interface (or
@@ -9,4 +10,4 @@ from disaster_risk_score_model.config import load_config
 
 __version__ = "0.1.0"
 
-__all__ = ["load_config", "__version__"]
+__all__ = ["__version__", "load_config"]

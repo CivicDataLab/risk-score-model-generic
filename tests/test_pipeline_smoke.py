@@ -18,7 +18,11 @@ def _drsm(*args, cwd):
     env = {**os.environ, "MPLBACKEND": "Agg"}
     subprocess.run(
         [sys.executable, "-m", "disaster_risk_score_model", *args],
-        cwd=cwd, check=True, capture_output=True, text=True, env=env,
+        cwd=cwd,
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
     )
 
 
@@ -36,7 +40,7 @@ def _read(data_dir, name):
 
 
 @pytest.mark.parametrize(
-    "filename,column",
+    ("filename", "column"),
     [
         ("factor_scores_l1_flood-hazard.csv", "flood-hazard"),
         ("factor_scores_l1_exposure.csv", "exposure"),
