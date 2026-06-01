@@ -1,29 +1,19 @@
-# TOPSIS composite risk score configuration.
+# TOPSIS composite risk score configuration — India (Assam) reference example.
 # See docs/topsis_risk_score.md for methodology detail.
+#
+# I/O locations are not set here; the district lookup and outputs are fixed names
+# resolved under --data-dir (run this example with --data-dir contrib/india/example/data).
 
 [weights]
-# Relative weights for each factor in the TOPSIS aggregation.
-# Higher weight = greater influence on the composite risk score.
-# Rationale: flood-hazard is the primary driver; exposure is a context factor.
 flood_hazard        = 4
 exposure            = 1
 vulnerability       = 2
 government_response = 2
 
 [classification]
-# Number of equal-width bins for the composite risk score (1 = lowest, n = highest risk).
 n_bins = 5
 
-[paths]
-# Paths relative to the repository root (India reference example).
-district_lookup_file = "contrib/india/example/data/district_objectid.csv"
-output_file          = "contrib/india/example/data/risk_score.csv"
-final_output_file    = "contrib/india/example/data/risk_score_district.csv"
-
 [cumulative_vars]
-# These columns get financial-year running cumulative sums recomputed inside the TOPSIS
-# script (independently of the cumulative sums in govtresponse.py) for use as platform
-# display indicators. Remove any column not present in your data.
 variables = [
     "total_tender_awarded_value",
     "sdrf_sanctions_awarded_value",
@@ -118,7 +108,6 @@ riverlevel_min                                        = "min"
 financial_year                                        = "first"
 
 # Decimal places to round output columns to. Omit a column to leave it unrounded.
-# Keys are snake_case column names (kebab-cased automatically on output).
 [rounding]
 avg_tele                          = 1
 electricity_access                = 1
@@ -139,9 +128,8 @@ elevation_mean                    = 0
 slope_mean                        = 0
 crop_area                         = 0
 
-# Optional, geography-specific post-processing of the final output, applied by
-# topsis_riskscore.py. Keys are snake_case column names (kebab-cased automatically
-# on output).
+# Optional, geography-specific post-processing of the final output.
+# Keys are snake_case column names (kebab-cased automatically on output).
 
 # Multiply a column in place by a constant factor (here: fraction -> percentage).
 [derivations.scale]

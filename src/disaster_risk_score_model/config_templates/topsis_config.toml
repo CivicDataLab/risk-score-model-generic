@@ -1,5 +1,9 @@
 # TOPSIS composite risk score configuration.
 # See docs/topsis_risk_score.md for methodology detail.
+#
+# I/O locations are NOT set here. The district lookup and the two output files
+# are fixed names (district_objectid.csv, risk_score.csv, risk_score_district.csv)
+# resolved under the run-time --data-dir (or RISK_MODEL_DATA_DIR).
 
 [weights]
 # Relative weights for each factor in the TOPSIS aggregation.
@@ -14,15 +18,14 @@ government_response = 2
 # Number of equal-width bins for the composite risk score (1 = lowest, n = highest risk).
 n_bins = 5
 
-[paths]
-# Paths relative to the repository root.
-district_lookup_file = "data/district_objectid.csv"
-output_file          = "data/risk_score.csv"
-final_output_file    = "data/risk_score_district.csv"
+# --- Optional enrichment sections below. -----------------------------------
+# All of the following are optional: omit any of them and the pipeline still
+# produces the core risk scores; they only add display/diagnostic columns to
+# the district-level output.
 
 [cumulative_vars]
 # These columns get financial-year running cumulative sums recomputed inside the TOPSIS
-# script (independently of the cumulative sums in govtresponse.py) for use as platform
+# step (independently of the cumulative sums in govtresponse.py) for use as platform
 # display indicators. Remove any column not present in your data.
 variables = [
     "total_procurement_value",
@@ -87,9 +90,9 @@ road_length                       = 0
 crop_area                         = 0
 
 # Optional, geography-specific post-processing of the final output. These
-# sections are read by topsis_riskscore.py and are entirely optional — the
-# generic model defines none, so nothing extra runs. Keys are snake_case column
-# names (kebab-cased automatically on output). See contrib/india/example for usage.
+# sections are entirely optional — the generic model defines none, so nothing
+# extra runs. Keys are snake_case column names (kebab-cased automatically on
+# output). See contrib/india/example for usage.
 #
 # [derivations.scale]      # multiply a column in place by a constant factor
 # inundation_pct = 100     # e.g. convert a 0-1 fraction to a percentage
