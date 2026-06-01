@@ -1,3 +1,0 @@
-# Runtime dependencies are declared in pyproject.toml. Installing the package
-# (editable or not) pulls them in:
--e .

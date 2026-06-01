@@ -104,7 +104,7 @@ numpy>=1.26
 pandas>=2.2
 ```
 
-These are included in the project-level `requirements.txt`.
+These come in with the project's `pyproject.toml` dependencies (`pip install -e .`).
 
 ---
 

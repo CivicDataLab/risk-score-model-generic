@@ -1,3 +1,0 @@
-# Development and test dependencies. Installs the package (editable) plus the
-# test/dev tooling declared in the pyproject [dev] extra.
--e .[dev]

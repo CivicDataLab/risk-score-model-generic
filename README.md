@@ -47,9 +47,7 @@ risk-score-model-generic/
 ├── pyproject.toml       Package metadata, dependencies, `drsm` entry point
 ├── CITATION.cff         Citation metadata
 ├── LICENSE              GNU AGPL v3.0
-├── README.md
-├── requirements.txt     `-e .` (deps live in pyproject.toml)
-└── requirements-dev.txt `-e .[dev]` (adds test tooling)
+└── README.md
 ```
 
 The model is **geography-neutral**: there is no committed config or input data at

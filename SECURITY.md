@@ -57,11 +57,11 @@ Risk scores produced by this model are relative classifications (1–5) at the a
 
 ## Dependencies
 
-This project's Python dependencies are listed in [`requirements.txt`](requirements.txt). We recommend periodically auditing them for known CVEs using tools such as `pip-audit` or `safety`.
+This project's Python dependencies are declared in [`pyproject.toml`](pyproject.toml). We recommend periodically auditing them for known CVEs using tools such as `pip-audit` or `safety`.
 
 ```bash
 pip install pip-audit
-pip-audit -r requirements.txt
+pip-audit  # audits the installed environment (run after `pip install -e .[dev]`)
 ```
 
 ---
