@@ -1,8 +1,9 @@
 # Government Response Score — Methodology
 
-**Script:** `scripts/govtresponse.py`
-**Input:** `data/MASTER_VARIABLES.csv`
-**Output:** `data/factor_scores_l1_government-response.csv`
+**Command:** `drsm govtresponse` (module `disaster_risk_score_model.govtresponse`)
+**Config:** `scores_config.toml` → `[govtresponse.*]`
+**Input:** `<data-dir>/MASTER_VARIABLES.csv`
+**Output:** `<data-dir>/factor_scores_l1_government-response.csv`
 **Output column added:** `government-response` (integer 1–5)
 
 ---

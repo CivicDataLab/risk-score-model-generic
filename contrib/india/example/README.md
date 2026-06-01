@@ -3,7 +3,8 @@
 This directory holds a complete, **real-world** configuration of the risk-score
 model for the state of **Assam, India** — the deployment the model was originally
 built for. It exists so adopters can see a fully-populated configuration and a
-genuine input dataset rather than only the small synthetic sample in `data/`.
+genuine input dataset rather than only the synthetic sample produced by
+`drsm generate-sample-data`.
 
 Everything here is India-specific and is intentionally kept *outside* the generic
 core:
@@ -22,38 +23,31 @@ the sibling directory [`../maps/`](../maps/).
 ## Contents
 
 ```
-config/   Full Assam configuration (all India-specific columns and schemes)
+config/   Full Assam configuration (scores_config.toml + topsis_config.toml)
 data/     Assam MASTER_VARIABLES.csv, district_objectid.csv, data_dictionary.csv,
           and Transformed_Assam_Data.csv
 ```
 
 ## Running the example
 
-The scripts read their configuration directory from the `RISK_MODEL_CONFIG_DIR`
-environment variable (see `config/loader.py`). Point it at this directory's
-`config/` folder and run the pipeline from the repository root:
+Point `drsm` at this directory's `config/` and `data/` folders. Unlike the old
+script-based workflow, this no longer has to run from the repository root — the
+data directory is supplied explicitly:
 
 ```bash
-# from the repository root
-export RISK_MODEL_CONFIG_DIR=contrib/india/example/config
-
-python scripts/hazard.py
-python scripts/exposure.py
-python scripts/vulnerability.py
-python scripts/govtresponse.py
-python scripts/topsis_riskscore.py
+drsm run \
+  --config-dir contrib/india/example/config \
+  --data-dir   contrib/india/example/data
 ```
 
-All inputs are read from, and all outputs are written to,
-`contrib/india/example/data/` (configured via `paths` in the example's
-`base_config.toml` and `topsis_config.toml`). The generated factor-score and
-risk-score CSVs are git-ignored.
+All inputs are read from, and all outputs are written to, the directory given by
+`--data-dir`. The generated factor-score and risk-score CSVs are git-ignored;
+the committed `MASTER_VARIABLES.csv` and `district_objectid.csv` are the real
+Assam inputs. Individual steps accept the same flags (e.g.
+`drsm hazard --config-dir … --data-dir …`).
 
-To return to the generic synthetic sample, simply unset the variable:
-
-```bash
-unset RISK_MODEL_CONFIG_DIR
-```
+Equivalently, you can set the `RISK_MODEL_CONFIG_DIR` / `RISK_MODEL_DATA_DIR`
+environment variables instead of passing the flags on every call.
 
 ## License
 

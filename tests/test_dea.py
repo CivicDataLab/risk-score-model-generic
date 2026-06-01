@@ -6,7 +6,7 @@ input-oriented CRS multiplier model — the single model used by the pipeline.
 
 import pytest
 
-import scripts.dea as dea
+from disaster_risk_score_model import dea
 
 # CBC LP precision is ~1e-4 in the worst case; 1e-3 is a safe, generous
 # threshold for these comparisons.

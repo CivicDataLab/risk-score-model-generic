@@ -35,27 +35,28 @@ By producing transparent, reproducible risk scores at granular administrative le
 
 ```
 risk-score-model-generic/
-├── scripts/             Factor and aggregation scripts (+ synthetic data generator)
-├── config/              Generic, geography-neutral TOML configuration
-├── data/                Synthetic sample input + district lookup; pipeline outputs
+├── src/disaster_risk_score_model/   Installable library: factor + TOPSIS modules,
+│                                    CLI, config loader, bundled config templates
 ├── tests/               Automated tests (pytest)
-├── docs/                Methodology documentation
+├── docs/                Methodology documentation + data dictionary
 ├── contrib/             Region-specific tooling and examples
 │   └── india/
 │       ├── maps/        India admin-boundary download and transformation scripts
 │       └── example/     India (Assam) reference configuration and dataset
 │
+├── pyproject.toml       Package metadata, dependencies, `drsm` entry point
 ├── CITATION.cff         Citation metadata
 ├── LICENSE              GNU AGPL v3.0
 ├── README.md
-├── requirements.txt     Python runtime dependencies
-└── requirements-dev.txt Development/test dependencies
+├── requirements.txt     `-e .` (deps live in pyproject.toml)
+└── requirements-dev.txt `-e .[dev]` (adds test tooling)
 ```
 
-The `config/` and `data/` at the root are **geography-neutral**: the bundled sample
-is synthetic so the model runs out of the box on any machine. A complete real-world
-configuration — the deployment the model was built for — lives under
-[`contrib/india/example/`](contrib/india/example/).
+The model is **geography-neutral**: there is no committed config or input data at
+the root. `drsm init-config` scaffolds an editable, geography-neutral config and
+`drsm generate-sample-data` writes a synthetic input, so the model runs out of the
+box on any machine. A complete real-world configuration — the deployment the model
+was built for — lives under [`contrib/india/example/`](contrib/india/example/).
 
 This repository covers the **modelling layer** only. Data acquisition is handled by a companion repository — see [Data inputs](#data-inputs-and-the-flood-data-ecosystem) below.
 
@@ -75,12 +76,12 @@ flowchart LR
 
     DataLayer --> M[MASTER_VARIABLES.csv<br/>One row per unit per month]
 
-    M --> H[hazard.py]
-    M --> E[exposure.py]
-    M --> V[vulnerability.py]
-    M --> G[govtresponse.py]
+    M --> H[drsm hazard]
+    M --> E[drsm exposure]
+    M --> V[drsm vulnerability]
+    M --> G[drsm govtresponse]
 
-    H --> T[topsis_riskscore.py<br/>TOPSIS aggregation]
+    H --> T[drsm topsis<br/>TOPSIS aggregation]
     E --> T
     V --> T
     G --> T
@@ -88,7 +89,7 @@ flowchart LR
     T --> O[risk_score_district.csv]
 ```
 
-The four **factor scripts** (`hazard.py`, `exposure.py`, `vulnerability.py`, `govtresponse.py`) are independent and can run in any order. The **TOPSIS script** then combines their outputs into a single composite risk score weighted by hazard, exposure, vulnerability, and government response.
+The four **factor steps** (`drsm hazard`, `drsm exposure`, `drsm vulnerability`, `drsm govtresponse`) are independent and can run in any order; `drsm run` runs all four and then TOPSIS. The **TOPSIS step** combines their outputs into a single composite risk score weighted by hazard, exposure, vulnerability, and government response.
 
 For a step-by-step walkthrough — including the input schema, configuration options, and per-script methodology — start with [`docs/getting_started.md`](docs/getting_started.md).
 
@@ -108,31 +109,31 @@ git clone https://github.com/CivicDataLab/risk-score-model-generic.git
 cd risk-score-model-generic
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -e .                   # add the [dev] extra for the test tooling: pip install -e .[dev]
 ```
 
-### Run the model with the bundled sample data
+Installing the package puts the `drsm` command on your `PATH`.
+
+### Run the model with synthetic sample data
 
 ```bash
-python scripts/hazard.py
-python scripts/exposure.py
-python scripts/vulnerability.py
-python scripts/govtresponse.py
-python scripts/topsis_riskscore.py
+drsm init-config ./config        # scaffold an editable config (scores_config.toml + topsis_config.toml)
+drsm generate-sample-data        # write a synthetic data/MASTER_VARIABLES.csv + district lookup
+drsm run                         # all four factors, then TOPSIS
 ```
 
-Each script reads `data/MASTER_VARIABLES.csv` (or the file named in your config) and writes a CSV under `data/`. The final composite is `data/risk_score_district.csv`.
+`drsm run` reads `data/MASTER_VARIABLES.csv` and writes the factor scores and the final composite `data/risk_score_district.csv` under `data/`. Each step is also runnable on its own (`drsm hazard`, `drsm exposure`, …, `drsm topsis`).
 
-The synthetic sample is committed, so the scripts run as-is. To regenerate it (it is deterministic), run:
+**Where things live** is controlled by the CLI, not the config:
+
+- `--config-dir DIR` (or `RISK_MODEL_CONFIG_DIR`, else `./config`) — the config directory.
+- `--data-dir DIR` (or `RISK_MODEL_DATA_DIR`, else `./data`) — inputs and outputs.
+- `--input-file NAME` (or `RISK_MODEL_INPUT_FILE`, else `MASTER_VARIABLES.csv`) — the master input filename.
+
+To run the bundled **India (Assam) reference example** instead of the synthetic sample, point both at it:
 
 ```bash
-python scripts/generate_sample_data.py
-```
-
-To run the bundled **India (Assam) reference example** instead of the synthetic sample, point the config-directory environment variable at it:
-
-```bash
-RISK_MODEL_CONFIG_DIR=contrib/india/example/config python scripts/hazard.py   # …and the rest
+drsm run --config-dir contrib/india/example/config --data-dir contrib/india/example/data
 ```
 
 See [`contrib/india/example/`](contrib/india/example/) for details. To adapt the model to a new geography, follow [`docs/getting_started.md`](docs/getting_started.md).
@@ -141,16 +142,19 @@ See [`contrib/india/example/`](contrib/india/example/) for details. To adapt the
 
 ## Configuration
 
-Configuration TOML files are available under `config/`. The loader (`config/loader.py`) merges `base_config.toml` with the script-specific file at runtime:
+`drsm init-config <dir>` writes two editable TOML files. The config describes
+*what* your data is and *how* to score it; *where* files live is supplied at run
+time via `--data-dir` / `--input-file` (see Quick start), not in the config.
 
-| File | Controls |
-|------|----------|
-| `base_config.toml` | Input file path and shared column names (`object_id`, `timeperiod`, `district`) |
-| `hazard_config.toml` | Hazard variables, quantile thresholds, output classes |
-| `exposure_config.toml` | Exposure variables and class boundaries |
-| `vulnerability_config.toml` | DEA input/output variables and polarity inversions |
-| `govtresponse_config.toml` | Response variables and fiscal-year start month |
-| `topsis_config.toml` | Factor weights, indicator aggregation rules, district lookup |
+| File | Section | Controls |
+|------|---------|----------|
+| `scores_config.toml` | `[columns]` | Shared column names (`object_id`, `timeperiod`, `district`) |
+| | `[hazard.*]` | Hazard variables, quantile thresholds, output classes |
+| | `[exposure.*]` | Exposure variables and class boundaries |
+| | `[vulnerability.*]` | DEA input/output variables and polarity inversions |
+| | `[govtresponse.*]` | Response variables and fiscal-year start month |
+| `topsis_config.toml` | `[weights]`, `[classification]` | Factor weights and risk-class bins (required) |
+| | `[indicators]`, `[rounding]`, `[cumulative_vars]`, `[derivations]`, `[renames]` | Optional district-output enrichment |
 
 Adapting the model to a new geography is mostly a matter of editing these TOMLs to match your input data. Code changes are needed only when adding new factor variables or modifying the methodology.
 
@@ -182,7 +186,7 @@ The acquisition, cleaning, and joining of those variables is geography-specific.
 
 That repository contains per-source extractors for the data sources used by the **India example** — the Indian Meteorological Department (IMD), ISRO Bhuvan, WorldPop, NASADEM, Mission Antyodaya, BharatMaps, WRIS, and government tender portals. Its output is a master CSV in the shape this model consumes. Adopters in other geographies supply their own equivalent sources; the model itself is agnostic to where the variables come from.
 
-For testing and demonstration, this repository ships with a small **synthetic** sample dataset in `data/` (generated by `scripts/generate_sample_data.py`) so the model can be run end-to-end without any real data pipeline. A real-world Assam dataset is available under [`contrib/india/example/`](contrib/india/example/).
+For testing and demonstration, `drsm generate-sample-data` writes a small **synthetic** sample dataset into the data directory so the model can be run end-to-end without any real data pipeline. A real-world Assam dataset is available under [`contrib/india/example/`](contrib/india/example/).
 
 ---
 
@@ -195,7 +199,7 @@ All inputs and outputs use non-proprietary, machine-readable formats:
 - **Configuration** — TOML
 - **Documentation** — Markdown
 
-Output columns and their semantics are documented inline in each methodology document and summarised in [`data/data_dictionary.csv`](data/data_dictionary.csv).
+Output columns and their semantics are documented inline in each methodology document and summarised in [`docs/data_dictionary.csv`](docs/data_dictionary.csv).
 
 
 ---

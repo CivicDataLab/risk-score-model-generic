@@ -31,17 +31,15 @@ git clone https://github.com/CivicDataLab/risk-score-model-generic.git
 cd risk-score-model-generic
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -e .[dev]
 ```
 
-Run the model end-to-end against the bundled sample data to confirm your environment is working:
+Run the model end-to-end against synthetic sample data to confirm your environment is working:
 
 ```bash
-python scripts/hazard.py
-python scripts/exposure.py
-python scripts/vulnerability.py
-python scripts/govtresponse.py
-python scripts/topsis_riskscore.py
+drsm init-config ./config
+drsm generate-sample-data
+drsm run
 ```
 
 ---
@@ -87,11 +85,12 @@ important for a machine-readable Digital Public Good.
   `total-population`). The TOPSIS step produces these automatically by applying
   `name.lower().replace("_", "-").replace(" ", "-")` to every column, so a
   well-named `snake_case` input maps cleanly to its `kebab-case` output.
-- **`data/data_dictionary.csv` is the authoritative list of column slugs.**
+- **`docs/data_dictionary.csv` is the authoritative list of column slugs.**
   When you add, remove, or rename a column, update the dictionary in the same PR
   so the schema contract stays accurate.
-- **Keep geography-specific names out of the generic core** (`config/`,
-  `scripts/`, `data/`). Anything specific to one jurisdiction — scheme acronyms,
+- **Keep geography-specific names out of the generic core** (the
+  `src/disaster_risk_score_model/` library and its bundled config templates).
+  Anything specific to one jurisdiction — scheme acronyms,
   local administrative units, display-only derivations — belongs in that
   geography's config under `contrib/` (see the `[derivations]` and `[renames]`
   sections used by `contrib/india/example/`).

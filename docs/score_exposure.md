@@ -1,8 +1,9 @@
 # Exposure Score — Methodology
 
-**Script:** `scripts/exposure.py`
-**Input:** `data/MASTER_VARIABLES.csv`
-**Output:** `data/factor_scores_l1_exposure.csv`
+**Command:** `drsm exposure` (module `disaster_risk_score_model.exposure`)
+**Config:** `scores_config.toml` → `[exposure.*]`
+**Input:** `<data-dir>/MASTER_VARIABLES.csv`
+**Output:** `<data-dir>/factor_scores_l1_exposure.csv`
 **Output column added:** `exposure` (integer 1–5)
 
 ---

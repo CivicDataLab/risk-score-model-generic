@@ -1,11 +1,11 @@
 # TOPSIS Risk Score & Final Output — Methodology
 
-**Script:** `scripts/topsis_riskscore.py`
-**TOPSIS class:** `scripts/topsis.py`
-**Input:** All four `factor_scores_l1_*.csv` files (merged)
+**Command:** `drsm topsis` (module `disaster_risk_score_model.topsis`)
+**Config:** `topsis_config.toml`
+**Input:** All four `factor_scores_l1_*.csv` files in the data dir (merged)
 **Outputs:**
-- `data/risk_score.csv` — block-level risk score
-- `data/risk_score_district.csv` — platform-ready output (blocks + district summaries)
+- `<data-dir>/risk_score.csv` — block-level risk score
+- `<data-dir>/risk_score_district.csv` — platform-ready output (blocks + district summaries)
 
 ---
 
@@ -99,7 +99,7 @@ Default weights:
 | `government-response` | **2** | Response capacity mitigates risk |
 | `exposure` | **1** | Population at risk; context factor |
 
-> Weights are configured in the `[weights]` section of `config/topsis_config.toml`
+> Weights are configured in the `[weights]` section of `topsis_config.toml`
 > (`flood_hazard`, `exposure`, `vulnerability`, `government_response`) and can be
 > changed without editing any code. The default weighting follows the document
 > “Disaster Risk and Resilience in India” drafted by the Ministry of Home Affairs
@@ -226,7 +226,7 @@ Contains both block-level rows and district-level summary rows, with:
 
 ## Adapting for a New Geography
 
-All settings are in `config/topsis_config.toml`. No Python edits are needed.
+Most settings are in `topsis_config.toml`. No Python edits are needed.
 Every column reference in the config is written in `snake_case`; output columns
 are lowercased and hyphenated to `kebab-case` automatically on write.
 
@@ -234,10 +234,10 @@ are lowercased and hyphenated to `kebab-case` automatically on write.
 |---------|----------------|-------------|
 | Factor weights | `topsis_config.toml` → `[weights]` | `flood_hazard`, `exposure`, `vulnerability`, `government_response` |
 | Number of risk classes | `topsis_config.toml` → `classification.n_bins` | Integer (default `5`) |
-| District lookup | `data/district_objectid.csv` | Replace with local district-to-ID mapping |
+| District lookup | `<data-dir>/district_objectid.csv` | Replace with local district-to-ID mapping (fixed filename, written by `drsm generate-sample-data`) |
 | Indicator columns and aggregation | `topsis_config.toml` → `[indicators]` | Remove rows for columns absent in your data; add new rows (snake_case column name → aggregation function) |
 | Output rounding | `topsis_config.toml` → `[rounding]` | snake_case column name → decimal places |
 | Derived / renamed output columns | `topsis_config.toml` → `[derivations]`, `[renames]` | Optional display-only column derivations and renames (snake_case; geography-specific; omit if not needed) |
-| Fiscal year logic (response score) | `govtresponse_config.toml` → `fiscal_year.start_month` | Month number when fiscal year starts (default `1` for January; the India example uses `4` for April) |
+| Fiscal year logic (response score) | `scores_config.toml` → `[govtresponse.fiscal_year].start_month` | Month number when fiscal year starts (default `1` for January; the India example uses `4` for April) |
 
 For a full step-by-step guide covering all factor scripts, see [getting_started.md](./getting_started.md).

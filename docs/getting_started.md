@@ -12,17 +12,17 @@ For methodology detail on any individual score, see the [document index](./READM
 flowchart TD
     A([MASTER_VARIABLES.csv\nOne row per geographic unit per month]) --> B & C & D & E
 
-    B[hazard.py] --> B1[factor_scores_l1_flood-hazard.csv]
-    C[exposure.py] --> C1[factor_scores_l1_exposure.csv]
-    D[vulnerability.py] --> D1[factor_scores_l1_vulnerability.csv]
-    E[govtresponse.py] --> E1[factor_scores_l1_government-response.csv]
+    B[drsm hazard] --> B1[factor_scores_l1_flood-hazard.csv]
+    C[drsm exposure] --> C1[factor_scores_l1_exposure.csv]
+    D[drsm vulnerability] --> D1[factor_scores_l1_vulnerability.csv]
+    E[drsm govtresponse] --> E1[factor_scores_l1_government-response.csv]
 
-    B1 & C1 & D1 & E1 --> F[topsis_riskscore.py]
+    B1 & C1 & D1 & E1 --> F[drsm topsis]
 
     F --> G([risk_score_district.csv\nComposite risk score — block and district level])
 ```
 
-The four factor scripts are independent of each other and can run in any order. The TOPSIS script must run after all four have completed.
+The four factor steps are independent of each other and can run in any order. The TOPSIS step must run after all four have completed; `drsm run` does all five in the correct order.
 
 ---
 
@@ -125,98 +125,109 @@ Maps district names to the platform's geographic IDs. Required by the TOPSIS scr
 
 ## Step 2 — Configure the Project
 
-All configuration lives in TOML files under `config/`. You do not need to edit any Python scripts to adapt the model — only the TOML files.
+Scaffold an editable config with `drsm init-config ./config`. This writes two
+TOML files; you do not need to edit any Python to adapt the model — only the TOML.
+The config describes *what* your data is and *how* to score it. *Where* files
+live is not in the config — it is supplied at run time via `--data-dir` /
+`--input-file` (see Step 3).
 
-### `config/base_config.toml`
+### `scores_config.toml`
 
-Always review this first. It sets the shared paths and column names used by every script.
+Holds the shared `[columns]` table plus one section per factor.
+
+**`[columns]`** — always review first; the column names every stage requires:
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
-| `paths.data_folder` | `data` | Your data folder is named differently |
-| `paths.input_file` | `MASTER_VARIABLES.csv` | Your input file has a different name |
 | `columns.time_column` | `timeperiod` | Your time column has a different name |
 | `columns.object_id_column` | `object_id` | Your geographic ID column is named differently |
 | `columns.district_column` | `district` | Your parent-unit (aggregation) column is named differently |
 
-### `config/hazard_config.toml`
+**`[hazard.*]`**
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
-| `inputs.variables` | 5 rainfall/inundation columns | You have different or fewer hazard variables |
-| `classification.quantile_thresholds` | `[0.35, 0.60, 0.80, 0.95]` | You want different classification boundaries |
-| `classification.classes` | `[1, 2, 3, 4, 5]` | You want a different number of risk classes |
+| `hazard.inputs.variables` | 5 rainfall/inundation columns | You have different or fewer hazard variables |
+| `hazard.classification.quantile_thresholds` | `[0.35, 0.60, 0.80, 0.95]` | You want different classification boundaries |
+| `hazard.classification.classes` | `[1, 2, 3, 4, 5]` | You want a different number of risk classes |
 
-### `config/exposure_config.toml`
-
-| Setting | Default | Change if... |
-|---------|---------|-------------|
-| `inputs.variables` | `total_population`, `total_households` | You have different population/household columns (min: 1) |
-| `classification.classes` | `[1, 2, 3, 4, 5]` | You want different class labels |
-
-### `config/vulnerability_config.toml`
+**`[exposure.*]`**
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
-| `inputs.condition_vars` | 11 infrastructure/demographic columns | You have different structural condition variables |
-| `inputs.damage_vars` | 6 flood damage columns | You have different damage variables (or none — see note below) |
-| `inputs.inverted_inputs` | 6 resilience variables | You change condition_vars — update which variables are inverted |
-| `inputs.neg_inputs` | 3 negative-polarity variables | You change condition_vars |
-| `normalisation.per_capita` | 2 variables ÷ `total_population` | Update denominators to match your data |
-| `normalisation.per_area` | 11 variables ÷ `area_sqkm` | Update denominators to match your data |
-| `classification.n_classes` | `5` | You want a different number of vulnerability classes |
-| `classification.damage_threshold` | `0.0001` | You want to change the damage significance threshold |
+| `exposure.inputs.variables` | `total_population`, `total_households` | You have different population/household columns (min: 1) |
+| `exposure.classification.classes` | `[1, 2, 3, 4, 5]` | You want different class labels |
 
-> **If damage data is not available:** The DEA method requires observed damage data. Without it, consider replacing the DEA with a simpler weighted index over `inputs.condition_vars` only.
-
-### `config/govtresponse_config.toml`
+**`[vulnerability.*]`**
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
-| `inputs.variables` | 3 generic procurement/fund columns | You have different expenditure columns (min: 1) |
-| `fiscal_year.start_month` | `1` (January / calendar year) | Your geography uses a different fiscal year calendar (the India example uses `4`) |
+| `vulnerability.inputs.condition_vars` | 11 infrastructure/demographic columns | You have different structural condition variables |
+| `vulnerability.inputs.damage_vars` | 6 flood damage columns | You have different damage variables (or none — see note below) |
+| `vulnerability.inputs.inverted_inputs` | 6 resilience variables | You change condition_vars — update which variables are inverted |
+| `vulnerability.inputs.neg_inputs` | 3 negative-polarity variables | You change condition_vars |
+| `vulnerability.normalisation.per_capita` | 2 variables ÷ `total_population` | Update denominators to match your data |
+| `vulnerability.normalisation.per_area` | 11 variables ÷ `area_sqkm` | Update denominators to match your data |
+| `vulnerability.classification.n_classes` | `5` | You want a different number of vulnerability classes |
+| `vulnerability.classification.damage_threshold` | `0.0001` | You want to change the damage significance threshold |
 
-### `config/topsis_config.toml`
+> **If damage data is not available:** The DEA method requires observed damage data. Without it, consider replacing the DEA with a simpler weighted index over `vulnerability.inputs.condition_vars` only.
+
+**`[govtresponse.*]`**
+
+| Setting | Default | Change if... |
+|---------|---------|-------------|
+| `govtresponse.inputs.variables` | 3 generic procurement/fund columns | You have different expenditure columns (min: 1) |
+| `govtresponse.fiscal_year.start_month` | `1` (January / calendar year) | Your geography uses a different fiscal year calendar (the India example uses `4`) |
+
+### `topsis_config.toml`
 
 | Setting | Default | Change if... |
 |---------|---------|-------------|
 | `weights.*` | hazard=4, exposure=1, vulnerability=2, response=2 | You want to re-weight factors based on local context or policy |
 | `classification.n_bins` | `5` | You want a different number of output risk classes |
-| `paths.district_lookup_file` | `data/district_objectid.csv` | You replace the district ID lookup |
-| `[indicators]` | Generic columns with aggregation rules | Add/remove rows to match the columns in your data (missing ones are ignored) |
-| `[rounding]` | Per-column decimal precision | You want different output rounding |
+| `[indicators]` | Generic columns with aggregation rules (optional) | Add/remove rows to match the columns in your data (missing ones are ignored) |
+| `[rounding]` | Per-column decimal precision (optional) | You want different output rounding |
+
+The `[indicators]`, `[rounding]`, `[cumulative_vars]`, `[derivations]` and
+`[renames]` sections are optional enrichment of the district-level output; omit
+them and the core risk scores are still produced. The district lookup
+(`district_objectid.csv`) and the output filenames are fixed names resolved
+under `--data-dir`, not config settings.
 
 Column references in this file are written in `snake_case`; the final output columns
 are lowercased and hyphenated to `kebab-case` automatically.
 
 ---
 
-## Step 3 — Run the Scripts
+## Step 3 — Run the Pipeline
 
-All scripts should be run from the repository root. By default the scripts read
-their configuration from `config/`. To run an alternative config set without
-editing the defaults — for example the bundled India reference example — set the
-`RISK_MODEL_CONFIG_DIR` environment variable to the directory containing your
-config files:
+After `drsm init-config ./config`, generate the synthetic sample (or supply your
+own `MASTER_VARIABLES.csv` in the data directory) and run the pipeline:
 
 ```bash
-export RISK_MODEL_CONFIG_DIR=contrib/india/example/config   # optional
+drsm generate-sample-data        # writes data/MASTER_VARIABLES.csv + district lookup
+drsm run                         # all four factors, then TOPSIS
 ```
 
-The four factor scripts are independent and can run in any order (or in parallel):
+`drsm run` resolves the config from `./config` and reads/writes under `./data` by
+default. Override either with flags or environment variables:
+
+| Flag | Environment variable | Default |
+|------|----------------------|---------|
+| `--config-dir DIR` | `RISK_MODEL_CONFIG_DIR` | `./config` |
+| `--data-dir DIR` | `RISK_MODEL_DATA_DIR` | `./data` |
+| `--input-file NAME` | `RISK_MODEL_INPUT_FILE` | `MASTER_VARIABLES.csv` |
+
+For example, to run the bundled India reference example:
 
 ```bash
-python scripts/hazard.py
-python scripts/exposure.py
-python scripts/vulnerability.py
-python scripts/govtresponse.py
+drsm run --config-dir contrib/india/example/config --data-dir contrib/india/example/data
 ```
 
-Once all four have completed, run the TOPSIS aggregation:
-
-```bash
-python scripts/topsis_riskscore.py
-```
+The four factor steps are independent and can run individually in any order
+(`drsm hazard`, `drsm exposure`, `drsm vulnerability`, `drsm govtresponse`); the
+TOPSIS step (`drsm topsis`) must run after all four. `drsm run` chains all five.
 
 ---
 
