@@ -122,7 +122,7 @@ drsm run                         # all four factors, then TOPSIS
 
 `drsm run` reads `data/MASTER_VARIABLES.csv` and writes the factor scores and the final composite `data/risk_score_district.csv` under `data/`. Each step is also runnable on its own (`drsm hazard`, `drsm exposure`, …, `drsm topsis`).
 
-**Where things live** is controlled by the CLI, not the config:
+CLI, options:
 
 - `--config-dir DIR` (or `RISK_MODEL_CONFIG_DIR`, else `./config`) — the config directory.
 - `--data-dir DIR` (or `RISK_MODEL_DATA_DIR`, else `./data`) — inputs and outputs.
@@ -142,7 +142,7 @@ See [`contrib/india/example/`](contrib/india/example/) for details. To adapt the
 
 `drsm init-config <dir>` writes two editable TOML files. The config describes
 *what* your data is and *how* to score it; *where* files live is supplied at run
-time via `--data-dir` / `--input-file` (see Quick start), not in the config.
+time via `--data-dir` / `--input-file` (see Quick start).
 
 | File | Section | Controls |
 |------|---------|----------|
