@@ -9,6 +9,3 @@ scikit-learn==1.5.1
 scipy==1.12.0
 seaborn==0.13.2
 tqdm==4.66.5
-
-# Optional: only needed for DEA_gurobi_backup.py (Gurobi license required)
-# gurobipy==11.0.3
