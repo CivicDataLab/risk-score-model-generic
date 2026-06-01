@@ -85,7 +85,7 @@ The float score is binned into 5 hazard classes using fixed quantile thresholds 
 | 4 (High) | > 80th and ≤ 95th percentile |
 | 5 (Very High) | > 95th percentile |
 
-> Thresholds are configurable in `hazard_config.py` (`QUANTILE_THRESHOLDS`).
+> Thresholds are configurable in `hazard_config.toml` (`quantile_thresholds`).
 
 ---
 
@@ -101,7 +101,7 @@ The following columns must be present in `MASTER_VARIABLES.csv`. All must be **n
 | `mean_rain` | Mean rainfall in the unit | mm or consistent unit |
 | `max_rain` | Maximum rainfall pixel value in the unit | mm or consistent unit |
 
-**Minimum viable configuration:** Any 2+ of these variables. Update `hazard_config.py → HAZARD_VARS` to match available columns.
+**Minimum viable configuration:** Any 2+ of these variables. Update `hazard_config.toml → variables` to match available columns.
 
 ### Adapting to Different Data Sources
 
