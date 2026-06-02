@@ -46,7 +46,7 @@ If you enter an unrecognised state name the script will print the list of valid 
 
 ### 2. `map_transformer.py` — Enrich and classify boundaries
 
-Reads the GeoJSONs produced by `map_exporter.py`, adds `object_id` join keys, applies urban/rural classification to the village layer, and writes flat CSV exports.
+Reads the GeoJSONs produced by `map_exporter.py`, adds `unit_id` join keys, applies urban/rural classification to the village layer, and writes flat CSV exports.
 
 Run from the `contrib/india/maps/` directory (the script resolves paths relative to its own location):
 
@@ -59,8 +59,8 @@ python map_transformer.py
 
 | Step | Detail |
 |------|--------|
-| Districts `object_id` | Concatenates Census 2011 codes: `stcode11-dtcode11` |
-| Subdistricts `object_id` | Concatenates: `stcode11-dtcode11-sdtcode11` |
+| Districts `unit_id` | Concatenates Census 2011 codes: `stcode11-dtcode11` |
+| Subdistricts `unit_id` | Concatenates: `stcode11-dtcode11-sdtcode11` |
 | Urban/rural split | Classifies villages by their LGD name suffix (see below) |
 | Forest/reserved area filter | Removes rows whose `vilnam_soi` contains FOREST, R.F., D.P.F., JUNGLE, HILL, R F |
 
@@ -111,5 +111,5 @@ These come in with the project's `pyproject.toml` dependencies (`pip install -e 
 ## Notes
 
 - All outputs use **EPSG:4326 (WGS 84)**.
-- The `object_id` keys produced here match the `object_id` column expected by the risk score model's config files.
+- The `unit_id` keys produced here match the `unit_id` column expected by the risk score model.
 - The NIC service uses 2024 administrative boundaries; Census 2011 codes (`stcode11`, `dtcode11`, `sdtcode11`) are retained as attributes for joining to statistical datasets.

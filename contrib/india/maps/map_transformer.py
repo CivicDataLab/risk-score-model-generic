@@ -15,12 +15,12 @@ villages_gdf = gpd.read_file(villages_geojson)
 # build path for the districts geojson of the current state
 district_geojson = base_dir / "Geojson" / f"{state}_districts.geojson"
 district = gpd.read_file(district_geojson)
-district["object_id"] = district["stcode11"] + "-" + district["dtcode11"]
+district["unit_id"] = district["stcode11"] + "-" + district["dtcode11"]
 district.to_file(base_dir / "csv" / f"{state}_districts.csv", driver="GeoJSON")  # Fix 1
 
 subdistrict_geojson = base_dir / "Geojson" / f"{state}_subdistricts.geojson"
 subdistrict = gpd.read_file(subdistrict_geojson)
-subdistrict["object_id"] = subdistrict["stcode11"] + "-" + subdistrict["dtcode11"] + "-" + subdistrict["sdtcode11"]
+subdistrict["unit_id"] = subdistrict["stcode11"] + "-" + subdistrict["dtcode11"] + "-" + subdistrict["sdtcode11"]
 subdistrict.to_file(base_dir / "csv" / f"{state}_subdistricts.csv", driver="GeoJSON")  # Fix 2
 
 
