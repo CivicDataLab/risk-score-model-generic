@@ -25,31 +25,25 @@ def main(config_dir=None, data_dir=None, input_file=None):
     value_vars = cfg["inputs"]["variables"]
     start_month = cfg["fiscal_year"]["start_month"]
     classes = cfg["classification"]["classes"]
-    class_col = GOVTRESPONSE_COL
-    fy_col = FINANCIAL_YEAR_COL
-    time_col = TIME_COLUMN
-    object_id_col = UNIT_ID_COLUMN
 
     master, data_path = load_master(data_dir, input_file)
 
-    master[fy_col] = master[time_col].apply(lambda x: get_financial_year(x, start_month))
+    master[FINANCIAL_YEAR_COL] = master[TIME_COLUMN].apply(lambda x: get_financial_year(x, start_month))
 
     # Accumulate spending within each fiscal year before scoring.
     for var in value_vars:
-        master[var] = master.groupby([object_id_col, fy_col])[var].cumsum()
+        master[var] = master.groupby([UNIT_ID_COLUMN, FINANCIAL_YEAR_COL])[var].cumsum()
 
     scored = score_by_month(
         master,
         value_vars,
-        time_col,
-        object_id_col,
-        lambda d: classify_std_intervals(d, value_vars, classes, class_col),
+        lambda d: classify_std_intervals(d, value_vars, classes, GOVTRESPONSE_COL),
     )
     merge_and_save(
         master,
         scored,
-        [time_col, object_id_col],
-        [class_col],
+        [TIME_COLUMN, UNIT_ID_COLUMN],
+        [GOVTRESPONSE_COL],
         data_path / cfg["output"]["file"],
     )
     print("Results saved successfully!")

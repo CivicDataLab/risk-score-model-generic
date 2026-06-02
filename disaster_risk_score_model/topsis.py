@@ -78,13 +78,10 @@ def apply_rounding_rules(df, rules):
 def main(config_dir=None, data_dir=None):
     cfg = load_config("topsis", config_dir=config_dir)
 
-    object_id_col = UNIT_ID_COLUMN
-    time_col = TIME_COLUMN
-    parent_col = PARENT_UNIT_COLUMN
     # The block-level result has its column names kebab-cased (see below), so the
     # parent-unit aggregation step keys on the kebab-cased forms of these columns.
-    time_out = _kebab(time_col)
-    parent_out = _kebab(parent_col)
+    time_out = _kebab(TIME_COLUMN)
+    parent_out = _kebab(PARENT_UNIT_COLUMN)
 
     factor_cols = [col for col, _ in FACTOR_WEIGHTS]
     weights = [cfg["weights"][weight_key] for _, weight_key in FACTOR_WEIGHTS]
@@ -111,17 +108,17 @@ def main(config_dir=None, data_dir=None):
         df = pd.read_csv(path)
         selected = [c for c in factor_cols if c in df.columns]
         selected_extra = [c for c in additional_columns if c in df.columns]
-        df = df[[*selected, object_id_col, time_col, *selected_extra]]
-        merged_df = merged_df.merge(df, on=[object_id_col, time_col], how="inner", suffixes=("", "_drop"))
+        df = df[[*selected, UNIT_ID_COLUMN, TIME_COLUMN, *selected_extra]]
+        merged_df = merged_df.merge(df, on=[UNIT_ID_COLUMN, TIME_COLUMN], how="inner", suffixes=("", "_drop"))
         merged_df = merged_df.loc[:, ~merged_df.columns.str.endswith("_drop")]
 
     require_columns(merged_df, REQUIRED_COLUMNS, "factor score CSVs")
 
-    merged_df = merged_df.sort_values(by=[object_id_col, FINANCIAL_YEAR_COL, time_col])
+    merged_df = merged_df.sort_values(by=[UNIT_ID_COLUMN, FINANCIAL_YEAR_COL, TIME_COLUMN])
 
     for var in cumulative_vars:
         if var in merged_df.columns:
-            merged_df[var + "_fy_cumsum"] = merged_df.groupby([object_id_col, FINANCIAL_YEAR_COL])[var].cumsum()
+            merged_df[var + "_fy_cumsum"] = merged_df.groupby([UNIT_ID_COLUMN, FINANCIAL_YEAR_COL])[var].cumsum()
 
     dist_ids = pd.read_csv(data_dir / DISTRICT_LOOKUP_FILE)
     # Match the kebab-case naming applied to the block-level result below, so the
@@ -131,8 +128,8 @@ def main(config_dir=None, data_dir=None):
     compositescorelabels = [str(i) for i in range(1, n_bins + 1)]
 
     df_months = []
-    for month in merged_df[time_col].unique():
-        df_month = merged_df[merged_df[time_col] == month]
+    for month in merged_df[TIME_COLUMN].unique():
+        df_month = merged_df[merged_df[TIME_COLUMN] == month]
         evaluation_matrix = np.array(df_month[factor_cols].values)
 
         df_month = df_month.copy()

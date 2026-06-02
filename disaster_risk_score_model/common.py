@@ -80,11 +80,11 @@ def load_master(data_dir=None, input_file=None):
     return df, data_path
 
 
-def score_by_month(master, value_vars, time_col, object_id_col, fn):
+def score_by_month(master, value_vars, fn):
     """Apply ``fn`` to each month's [value_vars + keys] slice and concat results."""
     results = []
-    for month in tqdm(master[time_col].unique()):
-        month_data = master[master[time_col] == month][[*value_vars, time_col, object_id_col]].copy()
+    for month in tqdm(master[TIME_COLUMN].unique()):
+        month_data = master[master[TIME_COLUMN] == month][[*value_vars, TIME_COLUMN, UNIT_ID_COLUMN]].copy()
         results.append(fn(month_data))
     return pd.concat(results)
 

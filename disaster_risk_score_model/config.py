@@ -3,7 +3,7 @@ Configuration loading and I/O-location resolution.
 
 Configuration is split across two TOML files in a config directory:
 
-    scores_config.toml   shared [columns] plus one table-tree per factor
+    scores_config.toml   one table-tree per factor
                          ([hazard.*], [exposure.*], [vulnerability.*],
                          [govtresponse.*])
     topsis_config.toml   [weights] and [classification] (required) plus the

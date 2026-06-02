@@ -21,8 +21,6 @@ EXPECTED_HAZARD_CLASSES = 5
 
 def calculate_hazard_scores(df, cfg):
     hazard_vars = cfg["inputs"]["variables"]
-    float_col = HAZARD_FLOAT_COL
-    class_col = HAZARD_CLASS_COL
 
     transformed = pd.DataFrame()
     for var in hazard_vars:
@@ -31,31 +29,29 @@ def calculate_hazard_scores(df, cfg):
         std = transformed[var].std()
         transformed[var] = (transformed[var] - mean) / std
 
-    df[float_col] = transformed[hazard_vars].mean(axis=1)
+    df[HAZARD_FLOAT_COL] = transformed[hazard_vars].mean(axis=1)
 
-    thresholds = [df[float_col].quantile(q) for q in cfg["classification"]["quantile_thresholds"]]
+    thresholds = [df[HAZARD_FLOAT_COL].quantile(q) for q in cfg["classification"]["quantile_thresholds"]]
 
-    conditions = [df[float_col] <= thresholds[0]]
+    conditions = [df[HAZARD_FLOAT_COL] <= thresholds[0]]
     conditions.extend(
-        (df[float_col] > thresholds[i]) & (df[float_col] <= thresholds[i + 1]) for i in range(len(thresholds) - 1)
+        (df[HAZARD_FLOAT_COL] > thresholds[i]) & (df[HAZARD_FLOAT_COL] <= thresholds[i + 1]) for i in range(len(thresholds) - 1)
     )
-    conditions.append(df[float_col] > thresholds[-1])
+    conditions.append(df[HAZARD_FLOAT_COL] > thresholds[-1])
 
-    df[class_col] = np.select(conditions, cfg["classification"]["classes"], default=1)
+    df[HAZARD_CLASS_COL] = np.select(conditions, cfg["classification"]["classes"], default=1)
 
     time_col = TIME_COLUMN
     object_id_col = UNIT_ID_COLUMN
-    return df[[time_col, object_id_col, class_col, float_col]]
+    return df[[time_col, object_id_col, HAZARD_CLASS_COL, HAZARD_FLOAT_COL]]
 
 
 def plot_hazard_distribution(df, cfg, output_path=None):
-    float_col = HAZARD_FLOAT_COL
-    class_col = HAZARD_CLASS_COL
     figsize = cfg["plot"]["figsize"]
 
     _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
-    sns.countplot(data=df, x=class_col, ax=ax1, color="steelblue")
+    sns.countplot(data=df, x=HAZARD_CLASS_COL, ax=ax1, color="steelblue")
     ax1.set_title("Distribution of Flood Hazard Classes", pad=15)
     ax1.set_xlabel("Hazard Class")
     ax1.set_ylabel("Count")
@@ -68,7 +64,7 @@ def plot_hazard_distribution(df, cfg, output_path=None):
             fontsize=10,
         )
 
-    sns.boxplot(data=df, x=class_col, y=float_col, ax=ax2, color="lightblue")
+    sns.boxplot(data=df, x=HAZARD_CLASS_COL, y=HAZARD_FLOAT_COL, ax=ax2, color="lightblue")
     ax2.set_title("Distribution of Float Values by Hazard Class", pad=15)
     ax2.set_xlabel("Hazard Class")
     ax2.set_ylabel("Standardized Hazard Score")
@@ -80,8 +76,7 @@ def plot_hazard_distribution(df, cfg, output_path=None):
 
 
 def validate_hazard_distribution(df):
-    class_col = HAZARD_CLASS_COL
-    dist = df[class_col].value_counts().sort_index()
+    dist = df[HAZARD_CLASS_COL].value_counts().sort_index()
     total = len(df)
 
     print("\nHazard Distribution Validation:")
@@ -92,9 +87,9 @@ def validate_hazard_distribution(df):
 
     checks = {
         "All classes present": len(dist) == EXPECTED_HAZARD_CLASSES,
-        "Class range valid": df[class_col].between(1, EXPECTED_HAZARD_CLASSES).all(),
+        "Class range valid": df[HAZARD_CLASS_COL].between(1, EXPECTED_HAZARD_CLASSES).all(),
         "Decreasing trend": dist.iloc[0] > dist.iloc[-1],
-        "No missing values": df[class_col].notna().all(),
+        "No missing values": df[HAZARD_CLASS_COL].notna().all(),
     }
 
     print("\nValidation Checks:")
@@ -120,10 +115,6 @@ def main(config_dir=None, data_dir=None, input_file=None):
     cfg = load_config("hazard", config_dir=config_dir)
 
     hazard_vars = cfg["inputs"]["variables"]
-    float_col = HAZARD_FLOAT_COL
-    class_col = HAZARD_CLASS_COL
-    time_col = TIME_COLUMN
-    object_id_col = UNIT_ID_COLUMN
 
     master, data_path = load_master(data_dir, input_file)
 
@@ -132,15 +123,13 @@ def main(config_dir=None, data_dir=None, input_file=None):
     scored = score_by_month(
         master,
         hazard_vars,
-        time_col,
-        object_id_col,
         lambda d: calculate_hazard_scores(d, cfg),
     )
     master = merge_and_save(
         master,
         scored,
-        [time_col, object_id_col],
-        [class_col, float_col],
+        [TIME_COLUMN, UNIT_ID_COLUMN],
+        [HAZARD_CLASS_COL, HAZARD_FLOAT_COL],
         data_path / cfg["output"]["file"],
     )
 

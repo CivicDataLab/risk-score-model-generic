@@ -15,23 +15,18 @@ def main(config_dir=None, data_dir=None, input_file=None):
 
     value_vars = cfg["inputs"]["variables"]
     classes = cfg["classification"]["classes"]
-    class_col = EXPOSURE_COL
-    time_col = TIME_COLUMN
-    object_id_col = UNIT_ID_COLUMN
 
     master, data_path = load_master(data_dir, input_file)
     scored = score_by_month(
         master,
         value_vars,
-        time_col,
-        object_id_col,
-        lambda d: classify_std_intervals(d, value_vars, classes, class_col),
+        lambda d: classify_std_intervals(d, value_vars, classes, EXPOSURE_COL),
     )
     merge_and_save(
         master,
         scored,
-        [time_col, object_id_col],
-        [class_col],
+        [TIME_COLUMN, UNIT_ID_COLUMN],
+        [EXPOSURE_COL],
         data_path / cfg["output"]["file"],
     )
     print("Results saved successfully!")
