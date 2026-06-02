@@ -10,8 +10,13 @@ from disaster_risk_score_model.common import (
     GOVTRESPONSE_COL,
     HAZARD_CLASS_COL,
     HAZARD_FLOAT_COL,
+    PARENT_UNIT_COLUMN,
+    REQUIRED_COLUMNS,
     RISK_SCORE_FILE,
+    TIME_COLUMN,
+    UNIT_ID_COLUMN,
     VULNERABILITY_COL,
+    require_columns,
 )
 from disaster_risk_score_model.config import load_config, resolve_data_dir
 
@@ -57,10 +62,10 @@ def _kebab(col):
     return col.lower().replace("_", "-").replace(" ", "-")
 
 
-def _district_factor_score(topsis_df, col, dist_ids, n_bins, labels, district_col, time_col):
-    dist = topsis_df.groupby([district_col, time_col])[col].mean().reset_index()
+def _parent_unit_factor_score(topsis_df, col, dist_ids, n_bins, labels, parent_col, time_col):
+    dist = topsis_df.groupby([parent_col, time_col])[col].mean().reset_index()
     dist[col] = pd.cut(dist[col], bins=n_bins, precision=0, labels=labels)
-    return dist.merge(dist_ids, on=district_col)
+    return dist.merge(dist_ids, on=parent_col)
 
 
 def apply_rounding_rules(df, rules):
@@ -73,13 +78,13 @@ def apply_rounding_rules(df, rules):
 def main(config_dir=None, data_dir=None):
     cfg = load_config("topsis", config_dir=config_dir)
 
-    object_id_col = cfg["columns"]["object_id_column"]
-    time_col = cfg["columns"]["time_column"]
-    district_col = cfg["columns"]["district_column"]
+    object_id_col = UNIT_ID_COLUMN
+    time_col = TIME_COLUMN
+    parent_col = PARENT_UNIT_COLUMN
     # The block-level result has its column names kebab-cased (see below), so the
-    # district-aggregation step keys on the kebab-cased forms of these columns.
+    # parent-unit aggregation step keys on the kebab-cased forms of these columns.
     time_out = _kebab(time_col)
-    district_out = _kebab(district_col)
+    parent_out = _kebab(parent_col)
 
     factor_cols = [col for col, _ in FACTOR_WEIGHTS]
     weights = [cfg["weights"][weight_key] for _, weight_key in FACTOR_WEIGHTS]
@@ -110,6 +115,8 @@ def main(config_dir=None, data_dir=None):
         merged_df = merged_df.merge(df, on=[object_id_col, time_col], how="inner", suffixes=("", "_drop"))
         merged_df = merged_df.loc[:, ~merged_df.columns.str.endswith("_drop")]
 
+    require_columns(merged_df, REQUIRED_COLUMNS, "factor score CSVs")
+
     merged_df = merged_df.sort_values(by=[object_id_col, FINANCIAL_YEAR_COL, time_col])
 
     for var in cumulative_vars:
@@ -118,7 +125,7 @@ def main(config_dir=None, data_dir=None):
 
     dist_ids = pd.read_csv(data_dir / DISTRICT_LOOKUP_FILE)
     # Match the kebab-case naming applied to the block-level result below, so the
-    # district lookup id lands in the same column as the block-level object id
+    # parent-unit lookup id lands in the same column as the block-level unit id
     # rather than a separate snake_case column after the final concat.
     dist_ids.columns = [_kebab(c) for c in dist_ids.columns]
     compositescorelabels = [str(i) for i in range(1, n_bins + 1)]
@@ -146,61 +153,61 @@ def main(config_dir=None, data_dir=None):
 
     topsis_result.to_csv(data_dir / RISK_SCORE_FILE, index=False)
 
-    dist_vul = _district_factor_score(
+    dist_vul = _parent_unit_factor_score(
         topsis_result,
         VULNERABILITY_COL,
         dist_ids,
         n_bins,
         compositescorelabels,
-        district_out,
+        parent_out,
         time_out,
     )
-    dist_exp = _district_factor_score(
+    dist_exp = _parent_unit_factor_score(
         topsis_result,
         EXPOSURE_COL,
         dist_ids,
         n_bins,
         compositescorelabels,
-        district_out,
+        parent_out,
         time_out,
     )
-    dist_govt = _district_factor_score(
+    dist_govt = _parent_unit_factor_score(
         topsis_result,
         GOVTRESPONSE_COL,
         dist_ids,
         n_bins,
         compositescorelabels,
-        district_out,
+        parent_out,
         time_out,
     )
-    dist_haz = _district_factor_score(
+    dist_haz = _parent_unit_factor_score(
         topsis_result,
         HAZARD_CLASS_COL,
         dist_ids,
         n_bins,
         compositescorelabels,
-        district_out,
+        parent_out,
         time_out,
     )
 
     topsis_result["risk-score"] = topsis_result["risk-score"].astype(int)
-    dist_risk = topsis_result.groupby([district_out, time_out])["risk-score"].mean().reset_index()
+    dist_risk = topsis_result.groupby([parent_out, time_out])["risk-score"].mean().reset_index()
     dist_risk["risk-score"] = pd.cut(dist_risk["risk-score"], bins=n_bins, precision=0, labels=compositescorelabels)
-    dist_risk = dist_risk.merge(dist_ids, on=district_out)
+    dist_risk = dist_risk.merge(dist_ids, on=parent_out)
 
     present_indicators = [c for c in indicators if c in topsis_result.columns]
     present_agg_rules = {k: v for k, v in aggregation_rules.items() if k in topsis_result.columns}
 
-    dist_indicators = topsis_result.groupby([district_out, time_out]).agg(present_agg_rules).reset_index()
+    dist_indicators = topsis_result.groupby([parent_out, time_out]).agg(present_agg_rules).reset_index()
 
     dist = pd.concat(
         [
-            dist_vul.set_index([district_out, time_out]),
-            dist_exp.set_index([district_out, time_out])[EXPOSURE_COL],
-            dist_govt.set_index([district_out, time_out])[GOVTRESPONSE_COL],
-            dist_haz.set_index([district_out, time_out])[HAZARD_CLASS_COL],
-            dist_risk.set_index([district_out, time_out])["risk-score"],
-            dist_indicators.set_index([district_out, time_out])[present_indicators],
+            dist_vul.set_index([parent_out, time_out]),
+            dist_exp.set_index([parent_out, time_out])[EXPOSURE_COL],
+            dist_govt.set_index([parent_out, time_out])[GOVTRESPONSE_COL],
+            dist_haz.set_index([parent_out, time_out])[HAZARD_CLASS_COL],
+            dist_risk.set_index([parent_out, time_out])["risk-score"],
+            dist_indicators.set_index([parent_out, time_out])[present_indicators],
         ],
         axis=1,
     ).reset_index()

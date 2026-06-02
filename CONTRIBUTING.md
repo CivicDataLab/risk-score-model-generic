@@ -86,7 +86,7 @@ pre-commit run --all-files
 
 - Python 3.11+.
 - Avoid adding dependencies not declared in `pyproject.toml` without discussion.
-- Configuration changes (new variables, thresholds, column names) belong in TOML config files, not hardcoded in scripts.
+- Configuration changes (new variables, thresholds, factor input column names) belong in TOML config files, not hardcoded in scripts. The three structural columns (`time_period`, `unit_id`, `parent_unit`) are the exception — they are fixed required names, not configurable.
 
 ---
 

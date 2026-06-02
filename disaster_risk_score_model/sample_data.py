@@ -5,7 +5,7 @@ This module produces the synthetic sample inputs that let the risk-score model
 run end-to-end without first running a real data pipeline:
 
     <data-dir>/MASTER_VARIABLES.csv    one row per geographic unit per month
-    <data-dir>/district_objectid.csv   district name -> district-level object_id
+    <data-dir>/district_objectid.csv   parent_unit name -> parent-level unit_id
 
 The data is entirely fictional. Place names, identifiers and values are
 invented and chosen only so that the pipeline exercises all of its branches
@@ -55,7 +55,7 @@ def build_units():
     """
     Return (units, district_lookup_rows).
 
-    units: list of dicts with object_id, district, district_object_id and a
+    units: list of dicts with unit_id, parent_unit, district_object_id and a
     set of static per-unit characteristics.
     """
     rng = np.random.default_rng(SEED)
@@ -63,7 +63,7 @@ def build_units():
     lookup = []
     for d_idx, (district, n_sub) in enumerate(DISTRICTS, start=1):
         district_object_id = f"R01-D{d_idx:02d}"
-        lookup.append({"district": district, "object_id": district_object_id})
+        lookup.append({"parent_unit": district, "unit_id": district_object_id})
         # Per-district "development level" gives correlated infrastructure.
         development = rng.uniform(0.3, 0.9)
         for s_idx in range(1, n_sub + 1):
@@ -72,8 +72,8 @@ def build_units():
             dev = float(np.clip(development + rng.uniform(-0.15, 0.15), 0.05, 0.98))
             units.append(
                 {
-                    "object_id": f"{district_object_id}-S{s_idx:02d}",
-                    "district": district,
+                    "unit_id": f"{district_object_id}-S{s_idx:02d}",
+                    "parent_unit": district,
                     "area_sqkm": area,
                     "_population_base": population,
                     "_dev": dev,
@@ -148,9 +148,9 @@ def generate(data_dir=None, input_file=None):
 
                 rows.append(
                     {
-                        "object_id": u["object_id"],
-                        "district": u["district"],
-                        "timeperiod": f"{year}_{month:02d}",
+                        "unit_id": u["unit_id"],
+                        "parent_unit": u["parent_unit"],
+                        "time_period": f"{year}_{month:02d}",
                         "area_sqkm": round(area, 2),
                         # hazard
                         "inundation_intensity_mean_nonzero": round(inund_mean, 4),

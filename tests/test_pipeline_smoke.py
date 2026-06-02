@@ -78,7 +78,7 @@ def test_final_district_output(data_dir):
     block = _read(data_dir, "risk_score.csv")
     # District-level rows are appended below the block-level rows.
     assert len(final) > len(block)
-    # Every row carries a unit- or district-level "object-id" in one column;
-    # no NaN split and no stray snake_case "object_id" column.
-    assert final["object-id"].notna().all()
-    assert "object_id" not in final.columns
+    # Every row carries a unit- or parent-level "unit-id" in one column;
+    # no NaN split and no stray snake_case "unit_id" column.
+    assert final["unit-id"].notna().all()
+    assert "unit_id" not in final.columns

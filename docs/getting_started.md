@@ -34,13 +34,15 @@ All scripts read from a single master CSV file:
 
 One row per geographic unit per month. The following columns are required by every script:
 
+These three **structural** columns use fixed names (they are not configurable) — rename your source columns to match:
+
 | Column | Type | Description |
 |--------|------|-------------|
-| `object_id` | String | Unique identifier for each geographic unit|
-| `timeperiod` | String (`YYYY_MM`) | Month identifier, e.g. `2022_07` |
-| `district` | String | Parent district name for each unit |
+| `unit_id` | String | Unique identifier for each geographic unit|
+| `time_period` | String (`YYYY_MM`) | Month identifier, e.g. `2022_07` |
+| `parent_unit` | String | Parent unit name each row rolls up to |
 
-Note: `object_id` can be any stable, unique identifier for a geographic unit — it does not need to follow any national coding scheme. The only requirements are that it is unique per unit and consistent across all input files and time periods. (For an example of a national scheme, the India reference example derives `object_id` from the LGD code system in the format `AA-BBB-CCCCC` — state, district, subdistrict; see [`contrib/india/example/`](../contrib/india/example/).)
+Note: `unit_id` can be any stable, unique identifier for a geographic unit — it does not need to follow any national coding scheme. The only requirements are that it is unique per unit and consistent across all input files and time periods. (For an example of a national scheme, the India reference example derives `unit_id` from the LGD code system in the format `AA-BBB-CCCCC` — state, district, subdistrict; see [`contrib/india/example/`](../contrib/india/example/).)
 
 In addition, each factor score requires its own input variables. The table below shows the default variables and the minimum viable set for each factor:
 
@@ -118,8 +120,8 @@ Maps district names to the platform's geographic IDs. Required by the TOPSIS scr
 
 | Column | Description |
 |--------|-------------|
-| `district` | District name matching the values in `MASTER_VARIABLES.csv` |
-| `object_id` | Platform-level object ID for that district |
+| `parent_unit` | Parent-unit name matching the values in `MASTER_VARIABLES.csv` |
+| `unit_id` | Platform-level ID for that parent unit |
 
 ---
 
@@ -133,15 +135,17 @@ live is not in the config — it is supplied at run time via `--data-dir` /
 
 ### `scores_config.toml`
 
-Holds the shared `[columns]` table plus one section per factor.
+Holds one section per factor.
 
-**`[columns]`** — always review first; the column names every stage requires:
+**Structural columns are fixed, not configured.** Every stage requires three
+columns in the master input, and their names are fixed — rename your source
+columns to match rather than configuring them:
 
-| Setting | Default | Change if... |
-|---------|---------|-------------|
-| `columns.time_column` | `timeperiod` | Your time column has a different name |
-| `columns.object_id_column` | `object_id` | Your geographic ID column is named differently |
-| `columns.district_column` | `district` | Your parent-unit (aggregation) column is named differently |
+| Column | Meaning |
+|--------|---------|
+| `time_period` | Monthly time slice, `YYYY_MM` |
+| `unit_id` | Stable unique id of the geographic unit being scored |
+| `parent_unit` | The parent unit each row rolls up to in the TOPSIS step |
 
 **`[hazard.*]`**
 

@@ -142,12 +142,13 @@ See [`contrib/india/example/`](contrib/india/example/) for details. To adapt the
 
 `drsm init-config <dir>` writes two editable TOML files. The config describes
 *what* your data is and *how* to score it; *where* files live is supplied at run
-time via `--data-dir` / `--input-file` (see Quick start).
+time via `--data-dir` / `--input-file` (see Quick start). The three structural
+columns (`time_period`, `unit_id`, `parent_unit`) are **fixed names**, not
+configured — rename your source columns to match.
 
 | File | Section | Controls |
 |------|---------|----------|
-| `scores_config.toml` | `[columns]` | Shared column names (`object_id`, `timeperiod`, `district`) |
-| | `[hazard.*]` | Hazard variables, quantile thresholds, output classes |
+| `scores_config.toml` | `[hazard.*]` | Hazard variables, quantile thresholds, output classes |
 | | `[exposure.*]` | Exposure variables and class boundaries |
 | | `[vulnerability.*]` | DEA input/output variables and polarity inversions |
 | | `[govtresponse.*]` | Response variables and fiscal-year start month |

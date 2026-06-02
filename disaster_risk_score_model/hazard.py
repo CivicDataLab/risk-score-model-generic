@@ -6,6 +6,8 @@ import seaborn as sns
 from disaster_risk_score_model.common import (
     HAZARD_CLASS_COL,
     HAZARD_FLOAT_COL,
+    TIME_COLUMN,
+    UNIT_ID_COLUMN,
     load_master,
     merge_and_save,
     score_by_month,
@@ -41,8 +43,8 @@ def calculate_hazard_scores(df, cfg):
 
     df[class_col] = np.select(conditions, cfg["classification"]["classes"], default=1)
 
-    time_col = cfg["columns"]["time_column"]
-    object_id_col = cfg["columns"]["object_id_column"]
+    time_col = TIME_COLUMN
+    object_id_col = UNIT_ID_COLUMN
     return df[[time_col, object_id_col, class_col, float_col]]
 
 
@@ -121,8 +123,8 @@ def main(config_dir=None, data_dir=None, input_file=None):
     hazard_vars = cfg["inputs"]["variables"]
     float_col = HAZARD_FLOAT_COL
     class_col = HAZARD_CLASS_COL
-    time_col = cfg["columns"]["time_column"]
-    object_id_col = cfg["columns"]["object_id_column"]
+    time_col = TIME_COLUMN
+    object_id_col = UNIT_ID_COLUMN
 
     master, data_path = load_master(data_dir, input_file)
 

@@ -1,17 +1,14 @@
-# Scores configuration: shared columns plus one section per factor score.
-# Edit this file to match your input data's column names and methodology.
+# Scores configuration: one section per factor score.
+# Edit this file to match your input data's variables and methodology.
 # I/O locations (data directory, input filename) are NOT set here — they are
 # supplied at run time via --data-dir / --input-file (or the RISK_MODEL_DATA_DIR
 # / RISK_MODEL_INPUT_FILE environment variables).
-
-[columns]
-# Column names in the master input CSV that every stage requires.
-# object_id is any stable, unique identifier for a geographic unit (it need not
-# follow any national coding scheme). district is the parent unit used for
-# district-level aggregation in the TOPSIS step.
-time_column      = "timeperiod"
-object_id_column = "object_id"
-district_column  = "district"
+#
+# Three structural columns are REQUIRED in the master input and use FIXED names
+# (not configurable) — rename your source columns to match:
+#   time_period  monthly time slice, "YYYY_MM"
+#   unit_id      stable unique id of the geographic unit being scored
+#   parent_unit  the parent unit each row rolls up to in the TOPSIS step
 
 # ===========================================================================
 # Flood hazard score. See docs/score_hazard.md.

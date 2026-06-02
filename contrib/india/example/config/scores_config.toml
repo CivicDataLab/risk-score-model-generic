@@ -1,12 +1,9 @@
 # Scores configuration — India (Assam) reference example.
 # I/O locations are supplied at run time via --data-dir / --input-file; run this
 # example with: --data-dir contrib/india/example/data
-
-[columns]
-# Column names in the master input CSV that every stage requires.
-time_column      = "timeperiod"
-object_id_column = "object_id"
-district_column  = "district"
+#
+# The master input must use the fixed structural column names time_period,
+# unit_id and parent_unit (these are not configurable).
 
 # ===========================================================================
 # Flood hazard score. See docs/score_hazard.md.

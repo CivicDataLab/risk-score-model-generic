@@ -1,5 +1,7 @@
 from disaster_risk_score_model.common import (
     EXPOSURE_COL,
+    TIME_COLUMN,
+    UNIT_ID_COLUMN,
     classify_std_intervals,
     load_master,
     merge_and_save,
@@ -14,8 +16,8 @@ def main(config_dir=None, data_dir=None, input_file=None):
     value_vars = cfg["inputs"]["variables"]
     classes = cfg["classification"]["classes"]
     class_col = EXPOSURE_COL
-    time_col = cfg["columns"]["time_column"]
-    object_id_col = cfg["columns"]["object_id_column"]
+    time_col = TIME_COLUMN
+    object_id_col = UNIT_ID_COLUMN
 
     master, data_path = load_master(data_dir, input_file)
     scored = score_by_month(

@@ -117,7 +117,7 @@ The key constraint is that all variables must be spatially aggregated to the sam
 
 ## Configuration
 
-Edit the `[hazard.*]` sections of `scores_config.toml` to adapt the model. Shared column names are in its `[columns]` table; I/O locations are set at run time via `--data-dir` / `--input-file`.
+Edit the `[hazard.*]` sections of `scores_config.toml` to adapt the model. The three structural columns (`time_period`, `unit_id`, `parent_unit`) use fixed names; I/O locations are set at run time via `--data-dir` / `--input-file`.
 
 | Setting | Default | Description |
 |---------|---------|-------------|

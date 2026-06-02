@@ -11,7 +11,7 @@ core:
 
 - **Government finance schemes** — SDRF (State Disaster Response Fund), SOPD, RIDF,
   LTIF, CIDF tender and expenditure columns.
-- **Administrative concepts** — LGD `object_id` codes (`AA-BBB-CCCCC`), revenue-circle
+- **Administrative concepts** — LGD `unit_id` codes (`AA-BBB-CCCCC`), revenue-circle
   area (`rc_area`), embankment infrastructure, relief camps.
 - **Fiscal calendar** — April–March (`fiscal_year.start_month = 4`).
 - **Data sources** — IMD (rainfall), ISRO Bhuvan (inundation), WorldPop, NASADEM,

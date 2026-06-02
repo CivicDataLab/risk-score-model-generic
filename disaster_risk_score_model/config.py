@@ -64,25 +64,23 @@ def load_config(name: str, config_dir: str | None = None) -> dict:
     Load the config for one pipeline stage.
 
     ``name`` is one of ``hazard``, ``exposure``, ``vulnerability``,
-    ``govtresponse`` or ``topsis``. The shared ``[columns]`` table (the single
-    source of truth, held in ``scores_config.toml``) is merged into the result,
-    so callers read ``cfg["columns"]`` regardless of the stage. Factor stages
-    additionally get their own ``[<name>.*]`` subsections promoted to the top
-    level (``cfg["inputs"]``, ``cfg["classification"]``, …); the topsis stage
-    gets the contents of ``topsis_config.toml``.
+    ``govtresponse`` or ``topsis``. Factor stages get their own ``[<name>.*]``
+    subsections promoted to the top level (``cfg["inputs"]``,
+    ``cfg["classification"]``, …); the topsis stage gets the contents of
+    ``topsis_config.toml``. The three structural columns are not configured here
+    — they are fixed names (see ``common.REQUIRED_COLUMNS``).
     """
     cfg_dir = resolve_config_dir(config_dir)
-    scores = _read_toml(cfg_dir, _SCORES_FILE)
-    columns = scores.get("columns", {})
 
     if name == "topsis":
-        return {"columns": columns, **_read_toml(cfg_dir, _TOPSIS_FILE)}
+        return _read_toml(cfg_dir, _TOPSIS_FILE)
 
+    scores = _read_toml(cfg_dir, _SCORES_FILE)
     if name not in _SCORE_FACTORS:
         raise ValueError(f"Unknown config section {name!r}; expected one of {', '.join((*_SCORE_FACTORS, 'topsis'))}.")
     if name not in scores:
         raise KeyError(f"Section [{name}] not found in {cfg_dir / _SCORES_FILE}.")
-    return {"columns": columns, **scores[name]}
+    return scores[name]
 
 
 def init_config(dest_dir: str) -> None:

@@ -1,7 +1,7 @@
 indicatorSlug,indicatorTitle,factor,unit,description,datasource
-object_id,Geographic unit ID,key,ID,"Stable unique identifier for each geographic unit (any scheme; not tied to a national code)",sample
-district,District,key,name,"Parent district name used for district-level aggregation",sample
-timeperiod,Time period,key,YYYY_MM,"Month identifier, e.g. 2022_07",sample
+unit_id,Geographic unit ID,key,ID,"Stable unique identifier for each geographic unit (any scheme; not tied to a national code)",sample
+parent_unit,Parent unit,key,name,"Parent unit name used for parent-level aggregation in the TOPSIS step",sample
+time_period,Time period,key,YYYY_MM,"Month identifier, e.g. 2022_07",sample
 area_sqkm,Unit area,key,km^2,"Area of the geographic unit in square kilometres (per-area normalisation denominator)",sample
 inundation_intensity_mean_nonzero,Mean inundation intensity,hazard,index,"Mean flood inundation intensity over flooded pixels",sample
 inundation_intensity_sum,Cumulative inundation intensity,hazard,index,"Sum of inundation intensity across the unit",sample

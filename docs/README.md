@@ -81,12 +81,12 @@ All factor score scripts read from a single master CSV:
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `object_id` | String | Stable unique identifier for a geographic unit (any scheme; need not be numeric) |
-| `timeperiod` | String | Month in `YYYY_MM` format |
-| `district` | String | Parent administrative district name |
+| `unit_id` | String | Stable unique identifier for a geographic unit (any scheme; need not be numeric) |
+| `time_period` | String | Month in `YYYY_MM` format |
+| `parent_unit` | String | Parent unit name each row rolls up to |
 | *(factor-specific variables)* | Float | See individual score docs |
 
-**Geographic unit:** Any consistent administrative unit (block, sub-district, revenue circle, etc.) that has a unique `object_id` and can be mapped to a district for aggregation.
+**Geographic unit:** Any consistent administrative unit (block, sub-district, revenue circle, etc.) that has a unique `unit_id` and can be mapped to a `parent_unit` for aggregation.
 
 **Temporal unit:** Monthly. The model runs independently per month, so time series length is flexible.
 

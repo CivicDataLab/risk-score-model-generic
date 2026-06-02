@@ -26,7 +26,7 @@ flowchart TD
     A3[factor_scores_l1_vulnerability.csv] --> M
     A4[factor_scores_l1_government-response.csv] --> M
 
-    M[Merge all factor score files\non object_id + timeperiod] --> CS
+    M[Merge all factor score files\non unit_id + time_period] --> CS
 
     CS[Compute financial year cumulative sums\nfor key tender variables] --> LOOP
 
@@ -143,7 +143,7 @@ Equal-width bins divide the 0–1 range into 5 risk classes.
 
 ## District Aggregation
 
-After block-level scoring, district-level summaries are computed by grouping on `(district, timeperiod)`:
+After block-level scoring, district-level summaries are computed by grouping on `(parent_unit, time_period)`:
 
 | Variable type | Aggregation |
 |---------------|-------------|
@@ -156,7 +156,7 @@ After block-level scoring, district-level summaries are computed by grouping on 
 | TOPSIS score | `mean` |
 | Risk score | `mean` then re-binned with `pd.cut` |
 
-District-level rows are concatenated below the original block-level rows into a single file. Both share one `object-id` column: block rows carry their unit-level id, and the appended district-summary rows carry the district-level lookup id (plus the district name).
+District-level rows are concatenated below the original block-level rows into a single file. Both share one `unit-id` column: block rows carry their unit-level id, and the appended district-summary rows carry the parent-level lookup id (plus the parent-unit name).
 
 ---
 
@@ -172,9 +172,9 @@ All four must be present, either merged or loadable from separate files:
 | `exposure` | Integer (1–5) | `factor_scores_l1_exposure.csv` |
 | `vulnerability` | Integer (1–5) | `factor_scores_l1_vulnerability.csv` |
 | `government-response` | Integer (1–5) | `factor_scores_l1_government-response.csv` |
-| `object_id` | String | Unique geographic unit ID (any scheme; configurable via `object_id_column`) |
-| `timeperiod` | String `YYYY_MM` | Month identifier (configurable via `time_column`) |
-| `district` | String | Parent unit used for aggregation (configurable via `district_column`) |
+| `unit_id` | String | Unique geographic unit ID (any scheme; fixed name) |
+| `time_period` | String `YYYY_MM` | Month identifier (fixed name) |
+| `parent_unit` | String | Parent unit used for aggregation (fixed name) |
 
 ### District ID Lookup
 
@@ -184,8 +184,8 @@ Required for joining district-level aggregations to geographic IDs. Must contain
 
 | Column | Description |
 |--------|-------------|
-| `district` | District name matching the master data. Use the same column name as the configured `district_column`. |
-| `object_id` | Corresponding district-level object ID for the platform. Use the same column name as the configured `object_id_column`. |
+| `parent_unit` | Parent-unit name matching the master data (fixed column name). |
+| `unit_id` | Corresponding parent-level ID for the platform (fixed column name). |
 
 ### Indicator Variables (optional)
 

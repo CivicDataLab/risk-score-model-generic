@@ -24,7 +24,7 @@ This inversion reflects that government response **mitigates** risk — it is th
 flowchart TD
     A([MASTER_VARIABLES.csv]) --> B
 
-    B[Derive financial year\nfrom timeperiod\nApril–March cycle] --> C
+    B[Derive financial year\nfrom time_period\nApril–March cycle] --> C
 
     C[Financial year cumulative sum\nper unit per financial year\nfor each response variable] --> D
 
@@ -53,7 +53,7 @@ flowchart TD
 
 ### Step 1 — Financial Year Derivation
 
-A financial year label is computed from the `timeperiod` column. In the Indian fiscal calendar (April–March):
+A financial year label is computed from the `time_period` column. In the Indian fiscal calendar (April–March):
 
 ```
 if month >= 4:  financial_year = YYYY–(YYYY+1)

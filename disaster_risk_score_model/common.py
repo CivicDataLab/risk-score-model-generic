@@ -34,6 +34,17 @@ DAMAGE_SCORE_COL = "damage_score"
 GOVTRESPONSE_COL = "government-response"
 FINANCIAL_YEAR_COL = "financial_year"
 
+# Required structural columns in the master input. These names are FIXED, not
+# configurable: every geography must use them verbatim so the data dictionary,
+# configs, and outputs stay consistent (see CONTRIBUTING naming conventions).
+# - time_period: the time slice (monthly, "YYYY_MM").
+# - unit_id:     stable unique id of the geographic unit being scored.
+# - parent_unit: the parent unit each row rolls up to in the TOPSIS step.
+TIME_COLUMN = "time_period"
+UNIT_ID_COLUMN = "unit_id"
+PARENT_UNIT_COLUMN = "parent_unit"
+REQUIRED_COLUMNS = (TIME_COLUMN, UNIT_ID_COLUMN, PARENT_UNIT_COLUMN)
+
 # Fixed filenames for the TOPSIS district lookup (an input written by
 # generate-sample-data) and the two TOPSIS outputs. Like the column names above,
 # these are an internal pipeline contract and are not configurable; only their
@@ -43,15 +54,29 @@ RISK_SCORE_FILE = "risk_score.csv"
 DISTRICT_RISK_FILE = "risk_score_district.csv"
 
 
+def require_columns(df, columns, source):
+    """Raise a clear ``ValueError`` if any of ``columns`` is absent from ``df``."""
+    missing = [c for c in columns if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"{source} is missing required column(s): {', '.join(missing)}. "
+            f"Inputs must use the fixed structural column names "
+            f"{TIME_COLUMN!r}, {UNIT_ID_COLUMN!r}, {PARENT_UNIT_COLUMN!r}."
+        )
+
+
 def load_master(data_dir=None, input_file=None):
     """
     Read the master variables CSV; return (df, data_dir).
 
     The returned ``data_dir`` is the resolved data directory, where callers
-    write their output CSV.
+    write their output CSV. Fails fast if the input lacks a required structural
+    column (``time_period``, ``unit_id``, ``parent_unit``).
     """
     data_path = resolve_data_dir(data_dir)
-    df = pd.read_csv(data_path / resolve_input_file(input_file))
+    input_path = data_path / resolve_input_file(input_file)
+    df = pd.read_csv(input_path)
+    require_columns(df, REQUIRED_COLUMNS, f"master input {input_path}")
     return df, data_path
 
 
