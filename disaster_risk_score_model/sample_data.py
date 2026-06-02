@@ -150,7 +150,7 @@ def generate(data_dir=None, input_file=None):
                     {
                         "unit_id": u["unit_id"],
                         "parent_unit": u["parent_unit"],
-                        "time_period": f"{year}_{month:02d}",
+                        "time_period": f"{year}-{month:02d}",
                         "area_sqkm": round(area, 2),
                         # hazard
                         "inundation_intensity_mean_nonzero": round(inund_mean, 4),

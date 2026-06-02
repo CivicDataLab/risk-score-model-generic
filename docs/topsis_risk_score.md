@@ -173,7 +173,7 @@ All four must be present, either merged or loadable from separate files:
 | `vulnerability` | Integer (1–5) | `factor_scores_l1_vulnerability.csv` |
 | `government-response` | Integer (1–5) | `factor_scores_l1_government-response.csv` |
 | `unit_id` | String | Unique geographic unit ID (any scheme; fixed name) |
-| `time_period` | String `YYYY_MM` | Month identifier (fixed name) |
+| `time_period` | String `YYYY-MM` | Month identifier (fixed name) |
 | `parent_unit` | String | Parent unit used for aggregation (fixed name) |
 
 ### District ID Lookup

@@ -6,7 +6,7 @@
 #
 # Three structural columns are REQUIRED in the master input and use FIXED names
 # (not configurable) — rename your source columns to match:
-#   time_period  monthly time slice, "YYYY_MM"
+#   time_period  monthly time slice, ISO 8601 "YYYY-MM"
 #   unit_id      stable unique id of the geographic unit being scored
 #   parent_unit  the parent unit each row rolls up to in the TOPSIS step
 

@@ -12,8 +12,8 @@ from disaster_risk_score_model.config import load_config
 
 
 def get_financial_year(time_period, start_month):
-    year = int(time_period.split("_")[0])
-    month = int(time_period.split("_")[1])
+    year = int(time_period.split("-")[0])
+    month = int(time_period.split("-")[1])
     if month >= start_month:
         return f"{year}-{year + 1}"
     return f"{year - 1}-{year}"

@@ -27,6 +27,6 @@ def test_require_columns_names_missing_column():
 
 def test_load_master_fails_fast_on_missing_structural_column(tmp_path):
     # A master input lacking a required structural column must fail with a clear error.
-    (tmp_path / "MASTER_VARIABLES.csv").write_text(f"{TIME_COLUMN},{UNIT_ID_COLUMN}\n2022_07,R01-D01-S01\n")
+    (tmp_path / "MASTER_VARIABLES.csv").write_text(f"{TIME_COLUMN},{UNIT_ID_COLUMN}\n2022-07,R01-D01-S01\n")
     with pytest.raises(ValueError, match=PARENT_UNIT_COLUMN):
         load_master(data_dir=str(tmp_path))

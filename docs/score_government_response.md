@@ -60,7 +60,7 @@ if month >= 4:  financial_year = YYYY–(YYYY+1)
 else:           financial_year = (YYYY–1)–YYYY
 ```
 
-Example: `2022_07` → `2022–2023`; `2023_02` → `2022–2023`
+Example: `2022-07` → `2022–2023`; `2023-02` → `2022–2023`
 
 > Adapt this logic if the target geography uses a different fiscal year convention.
 

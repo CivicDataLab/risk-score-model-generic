@@ -82,7 +82,7 @@ All factor score scripts read from a single master CSV:
 | Column | Type | Description |
 |--------|------|-------------|
 | `unit_id` | String | Stable unique identifier for a geographic unit (any scheme; need not be numeric) |
-| `time_period` | String | Month in `YYYY_MM` format |
+| `time_period` | String | Month in `YYYY-MM` format |
 | `parent_unit` | String | Parent unit name each row rolls up to |
 | *(factor-specific variables)* | Float | See individual score docs |
 

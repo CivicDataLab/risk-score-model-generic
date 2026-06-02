@@ -77,7 +77,6 @@ def plot_hazard_distribution(df, cfg, output_path=None):
     if output_path:
         plt.savefig(output_path, dpi=cfg["plot"]["dpi"], bbox_inches="tight")
         print(f"\nPlot saved to: {output_path}")
-    plt.show()
 
 
 def validate_hazard_distribution(df):

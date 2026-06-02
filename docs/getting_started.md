@@ -39,7 +39,7 @@ These three **structural** columns use fixed names (they are not configurable) �
 | Column | Type | Description |
 |--------|------|-------------|
 | `unit_id` | String | Unique identifier for each geographic unit|
-| `time_period` | String (`YYYY_MM`) | Month identifier, e.g. `2022_07` |
+| `time_period` | String (`YYYY-MM`) | Month identifier, e.g. `2022-07` |
 | `parent_unit` | String | Parent unit name each row rolls up to |
 
 Note: `unit_id` can be any stable, unique identifier for a geographic unit — it does not need to follow any national coding scheme. The only requirements are that it is unique per unit and consistent across all input files and time periods. (For an example of a national scheme, the India reference example derives `unit_id` from the LGD code system in the format `AA-BBB-CCCCC` — state, district, subdistrict; see [`contrib/india/example/`](../contrib/india/example/).)
@@ -143,7 +143,7 @@ columns to match rather than configuring them:
 
 | Column | Meaning |
 |--------|---------|
-| `time_period` | Monthly time slice, `YYYY_MM` |
+| `time_period` | Monthly time slice, `YYYY-MM` |
 | `unit_id` | Stable unique id of the geographic unit being scored |
 | `parent_unit` | The parent unit each row rolls up to in the TOPSIS step |
 

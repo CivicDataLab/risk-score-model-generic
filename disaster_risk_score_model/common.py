@@ -37,7 +37,7 @@ FINANCIAL_YEAR_COL = "financial_year"
 # Required structural columns in the master input. These names are FIXED, not
 # configurable: every geography must use them verbatim so the data dictionary,
 # configs, and outputs stay consistent (see CONTRIBUTING naming conventions).
-# - time_period: the time slice (monthly, "YYYY_MM").
+# - time_period: the time slice (monthly, ISO 8601 "YYYY-MM").
 # - unit_id:     stable unique id of the geographic unit being scored.
 # - parent_unit: the parent unit each row rolls up to in the TOPSIS step.
 TIME_COLUMN = "time_period"
