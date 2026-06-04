@@ -31,17 +31,15 @@ git clone https://github.com/CivicDataLab/risk-score-model-generic.git
 cd risk-score-model-generic
 python -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -e .[dev]
 ```
 
-Run the model end-to-end against the bundled sample data to confirm your environment is working:
+Run the model end-to-end against synthetic sample data to confirm your environment is working:
 
 ```bash
-python scripts/hazard.py
-python scripts/exposure.py
-python scripts/vulnerability.py
-python scripts/govtresponse.py
-python scripts/topsis_riskscore.py
+drsm init-config ./config
+drsm generate-sample-data
+drsm run
 ```
 
 ---
@@ -67,9 +65,54 @@ The scoring methodology (factor weights, normalisation approach, DEA setup, TOPS
 
 ## Code style
 
-- Python 3.11+, no enforced formatter — match the style of the file you are editing.
-- Avoid adding dependencies not in `requirements.txt` without discussion.
-- Configuration changes (new variables, thresholds, column names) belong in TOML config files, not hardcoded in scripts.
+We follow the [OCP Software Development Handbook](https://ocp-software-handbook.readthedocs.io/en/latest/python/index.html).
+Formatting and linting are handled by [Ruff](https://docs.astral.sh/ruff/) (line
+length 119) and typo-checking by [codespell](https://github.com/codespell-project/codespell),
+all configured in `pyproject.toml` and enforced in CI.
+
+Install the hooks once after setting up your environment so checks run on every commit:
+
+```bash
+pre-commit install
+```
+
+Run the checks manually at any time:
+
+```bash
+ruff format .        # auto-format
+ruff check .         # lint
+pre-commit run --all-files
+```
+
+- Python 3.11+.
+- Avoid adding dependencies not declared in `pyproject.toml` without discussion.
+- Configuration changes (new variables, thresholds, factor input column names) belong in TOML config files, not hardcoded in scripts. The three structural columns (`time_period`, `unit_id`, `parent_unit`) are the exception — they are fixed required names, not configurable.
+
+---
+
+## Naming conventions
+
+A single convention keeps the data dictionary, configs, and outputs consistent —
+important for a machine-readable Digital Public Good.
+
+- **Inputs, config keys, intermediate columns, and Python identifiers use
+  `snake_case`** — lowercase words separated by underscores (e.g.
+  `total_population`, `net_sown_area_ha`, `flood_protection_failures`). Avoid
+  spaces, capitals, and unexplained abbreviations in column names.
+- **Output / platform-display columns use `kebab-case`** — lowercase words
+  separated by hyphens (e.g. `flood-hazard`, `risk-score`,
+  `total-population`). The TOPSIS step produces these automatically by applying
+  `name.lower().replace("_", "-").replace(" ", "-")` to every column, so a
+  well-named `snake_case` input maps cleanly to its `kebab-case` output.
+- **`docs/data_dictionary.csv` is the authoritative list of column slugs.**
+  When you add, remove, or rename a column, update the dictionary in the same PR
+  so the schema contract stays accurate.
+- **Keep geography-specific names out of the generic core** (the
+  `disaster_risk_score_model/` library and its bundled config templates).
+  Anything specific to one jurisdiction — scheme acronyms,
+  local administrative units, display-only derivations — belongs in that
+  geography's config under `contrib/` (see the `[derivations]` and `[renames]`
+  sections used by `contrib/india/example/`).
 
 ---
 

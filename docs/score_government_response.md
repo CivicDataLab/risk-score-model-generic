@@ -1,8 +1,9 @@
 # Government Response Score — Methodology
 
-**Script:** `scripts/govtresponse.py`
-**Input:** `data/MASTER_VARIABLES.csv`
-**Output:** `data/factor_scores_l1_government-response.csv`
+**Command:** `drsm govtresponse` (module `disaster_risk_score_model.govtresponse`)
+**Config:** `scores_config.toml` → `[govtresponse.*]`
+**Input:** `<data-dir>/MASTER_VARIABLES.csv`
+**Output:** `<data-dir>/factor_scores_l1_government-response.csv`
 **Output column added:** `government-response` (integer 1–5)
 
 ---
@@ -23,7 +24,7 @@ This inversion reflects that government response **mitigates** risk — it is th
 flowchart TD
     A([MASTER_VARIABLES.csv]) --> B
 
-    B[Derive financial year\nfrom timeperiod\nApril–March cycle] --> C
+    B[Derive financial year\nfrom time_period\nApril–March cycle] --> C
 
     C[Financial year cumulative sum\nper unit per financial year\nfor each response variable] --> D
 
@@ -52,14 +53,14 @@ flowchart TD
 
 ### Step 1 — Financial Year Derivation
 
-A financial year label is computed from the `timeperiod` column. In the Indian fiscal calendar (April–March):
+A financial year label is computed from the `time_period` column. In the Indian fiscal calendar (April–March):
 
 ```
 if month >= 4:  financial_year = YYYY–(YYYY+1)
 else:           financial_year = (YYYY–1)–YYYY
 ```
 
-Example: `2022_07` → `2022–2023`; `2023_02` → `2022–2023`
+Example: `2022-07` → `2022–2023`; `2023-02` → `2022–2023`
 
 > Adapt this logic if the target geography uses a different fiscal year convention.
 
@@ -107,9 +108,9 @@ The composite score is binned using mean (μ) and standard deviation (σ), but w
 
 | Column | Description | Minimum Requirement |
 |--------|-------------|---------------------|
-| `total_tender_awarded_value` | Total value of all flood-related contracts awarded | Any measure of total disaster-related procurement spending |
-| `SDRF_sanctions_awarded_value` | Value of SDRF (State Disaster Response Fund) sanctions | Disaster fund disbursements or equivalent earmarked spending |
-| `SDRF_tenders_awarded_value` | Value of contracts funded via SDRF scheme | Scheme-specific procurement values (optional; can be omitted) |
+| `total_procurement_value` | Total value of all flood-related contracts awarded | Any measure of total disaster-related procurement spending |
+| `disaster_fund_sanctions_value` | Value of disaster-fund sanctions | Disaster fund disbursements or equivalent earmarked spending |
+| `disaster_fund_procurement_value` | Value of contracts funded via a disaster-fund scheme | Scheme-specific procurement values (optional; can be omitted) |
 
 **Minimum viable configuration:** A single variable representing total government flood expenditure is sufficient. The model works with any combination of monetary spending variables.
 

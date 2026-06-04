@@ -1,11 +1,11 @@
 # TOPSIS Risk Score & Final Output — Methodology
 
-**Script:** `scripts/topsis_riskscore.py`
-**TOPSIS class:** `scripts/topsis.py`
-**Input:** All four `factor_scores_l1_*.csv` files (merged)
+**Command:** `drsm topsis` (module `disaster_risk_score_model.topsis`)
+**Config:** `topsis_config.toml`
+**Input:** All four `factor_scores_l1_*.csv` files in the data dir (merged)
 **Outputs:**
-- `data/risk_score.csv` — block-level risk score
-- `data/risk_score_final_district.csv` — platform-ready output (blocks + district summaries)
+- `<data-dir>/risk_score.csv` — block-level risk score
+- `<data-dir>/risk_score_district.csv` — platform-ready output (blocks + district summaries)
 
 ---
 
@@ -26,7 +26,7 @@ flowchart TD
     A3[factor_scores_l1_vulnerability.csv] --> M
     A4[factor_scores_l1_government-response.csv] --> M
 
-    M[Merge all factor score files\non object_id + timeperiod] --> CS
+    M[Merge all factor score files\non unit_id + time_period] --> CS
 
     CS[Compute financial year cumulative sums\nfor key tender variables] --> LOOP
 
@@ -41,7 +41,7 @@ flowchart TD
 
         T4[Step 4: L2 distances\nd+ = distance to best ideal\nd− = distance to worst ideal] --> T5
 
-        T5[Step 5: Similarity score\nTOPSIS_Score = d− / d+ + d−\n0 = like best, 1 = like worst] --> T6
+        T5[Step 5: Similarity score\ntopsis_score = d− / d+ + d−\n0 = like best, 1 = like worst] --> T6
 
         T6[pd.cut into 5 equal bins\nrisk-score 1–5]
     end
@@ -57,7 +57,7 @@ flowchart TD
         DA4[Concat district rows\nwith block rows] --> FIN
     end
 
-    FIN[risk_score_final_district.csv\nBoth block-level and district-level rows]
+    FIN[risk_score_district.csv\nBoth block-level and district-level rows]
 ```
 
 ---
@@ -99,7 +99,11 @@ Default weights:
 | `government-response` | **2** | Response capacity mitigates risk |
 | `exposure` | **1** | Population at risk; context factor |
 
-> Weights are set as integer literals in `topsis_riskscore.py` (`fldhzd_w`, `exp_w`, `vul_w`, `resp_w`). The weightages are defined using the document “Disaster Risk and Resilience in India” drafted by the Ministry of Home Affairs and UNDP. 
+> Weights are configured in the `[weights]` section of `topsis_config.toml`
+> (`flood_hazard`, `exposure`, `vulnerability`, `government_response`) and can be
+> changed without editing any code. The default weighting follows the document
+> “Disaster Risk and Resilience in India” drafted by the Ministry of Home Affairs
+> and UNDP; adjust it to reflect local context or policy.
 
 ### Step 4 — Ideal Solutions
 
@@ -110,7 +114,7 @@ A+ (best ideal)  = max of each column (highest risk scenario)
 A− (worst ideal) = min of each column (lowest risk scenario)
 ```
 
-> `criterias = [True, True, True, True]` — all set to benefit criteria (higher = closer to worst).
+> `criteria = [True, True, True, True]` — all set to benefit criteria (higher = closer to worst).
 
 ### Step 5 — L2 Distances
 
@@ -122,7 +126,7 @@ d−_i = sqrt(Σ_j (v_ij − A−_j)²)   # distance to worst (best case)
 ### Step 6 — Similarity Score
 
 ```
-TOPSIS_Score_i = d−_i / (d+_i + d−_i)
+topsis_score_i = d−_i / (d+_i + d−_i)
 ```
 
 Score ranges from 0 (most similar to best ideal = lowest risk) to 1 (most similar to worst ideal = highest risk).
@@ -130,7 +134,7 @@ Score ranges from 0 (most similar to best ideal = lowest risk) to 1 (most simila
 ### Classification
 
 ```python
-risk-score = pd.cut(TOPSIS_Score, bins=5, labels=[1,2,3,4,5])
+risk-score = pd.cut(topsis_score, bins=5, labels=[1,2,3,4,5])
 ```
 
 Equal-width bins divide the 0–1 range into 5 risk classes.
@@ -139,7 +143,7 @@ Equal-width bins divide the 0–1 range into 5 risk classes.
 
 ## District Aggregation
 
-After block-level scoring, district-level summaries are computed by grouping on `(district, timeperiod)`:
+After block-level scoring, district-level summaries are computed by grouping on `(parent_unit, time_period)`:
 
 | Variable type | Aggregation |
 |---------------|-------------|
@@ -152,7 +156,7 @@ After block-level scoring, district-level summaries are computed by grouping on 
 | TOPSIS score | `mean` |
 | Risk score | `mean` then re-binned with `pd.cut` |
 
-District rows are concatenated with the original block rows into a single file. Rows are distinguished by whether the `district` field matches the `block_name` field (district rows have them equal, block rows have a specific block name).
+District-level rows are concatenated below the original block-level rows into a single file. Both share one `unit-id` column: block rows carry their unit-level id, and the appended district-summary rows carry the parent-level lookup id (plus the parent-unit name).
 
 ---
 
@@ -168,24 +172,24 @@ All four must be present, either merged or loadable from separate files:
 | `exposure` | Integer (1–5) | `factor_scores_l1_exposure.csv` |
 | `vulnerability` | Integer (1–5) | `factor_scores_l1_vulnerability.csv` |
 | `government-response` | Integer (1–5) | `factor_scores_l1_government-response.csv` |
-| `object_id` | Integer | Unique geographic unit ID |
-| `timeperiod` | String `YYYY_MM` | Month identifier |
-| `district` | String | Parent district name |
+| `unit_id` | String | Unique geographic unit ID (any scheme; fixed name) |
+| `time_period` | String `YYYY-MM` | Month identifier (fixed name) |
+| `parent_unit` | String | Parent unit used for aggregation (fixed name) |
 
 ### District ID Lookup
 
-**File:** `assets/district_objectid.csv`
+**File:** `data/district_objectid.csv`
 
 Required for joining district-level aggregations to geographic IDs. Must contain:
 
 | Column | Description |
 |--------|-------------|
-| `district` | District name matching the master data |
-| `object_id` | Corresponding district-level object ID for the platform |
+| `parent_unit` | Parent-unit name matching the master data (fixed column name). |
+| `unit_id` | Corresponding parent-level ID for the platform (fixed column name). |
 
 ### Indicator Variables (optional)
 
-The 50+ raw indicator columns from `MASTER_VARIABLES.csv` are carried through and aggregated to district level for the platform's drill-down display. These are listed in the `indicators` and `aggregation_rules` dictionaries in `topsis_riskscore.py`. Remove or add columns as appropriate for a new geography.
+The 50+ raw indicator columns from `MASTER_VARIABLES.csv` are carried through and aggregated to district level for the platform's drill-down display. These are listed in the `[indicators]` section of `topsis_config.toml`, keyed by column name (snake_case) with the aggregation function as the value. Remove or add rows as appropriate for a new geography.
 
 ---
 
@@ -197,36 +201,43 @@ Contains all merged factor score data plus:
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `TOPSIS_Score` | Float (0–1) | Raw TOPSIS similarity score |
+| `topsis-score` | Float (0–1) | Raw TOPSIS similarity score |
 | `risk-score` | Integer (1–5) | Composite risk class |
 | `financial-year` | String | Fiscal year label |
 | `*-fy-cumsum` | Float | Financial year cumulative tender values |
 
 All column names are lowercased and hyphenated (`snake_case` → `kebab-case`).
 
-### `risk_score_final_district.csv` (Platform output)
+### `risk_score_district.csv` (Platform output)
 
 Contains both block-level rows and district-level summary rows, with:
 
 - All columns from `risk_score.csv`
 - District-aggregated factor scores and indicators
-- `total-infrastructure-damage` = `total-house-fully-damaged` + `roads` + `bridge`
-- `inundation-pct` expressed as percentage (× 100)
-- Rounding applied per column (see `rounding_rules` dict in script)
+- Rounding applied per column (see the `[rounding]` section of the config)
+- Optional, geography-specific derived/renamed columns from the `[derivations]`
+  and `[renames]` config sections (the generic model defines none). For example,
+  the India reference example derives
+  `total-infrastructure-damage` = `total-houses-fully-damaged` + `roads-damaged` + `bridges-damaged`,
+  expresses `inundation-pct` as a percentage (× 100), and renames
+  `preparedness-measures-tenders-awarded-value` → `restoration-measures-tenders-awarded-value`.
 
 ---
 
 ## Adapting for a New Geography
 
-All settings are in `config/topsis_config.toml`. No Python edits are needed.
+Most settings are in `topsis_config.toml`. No Python edits are needed.
+Every column reference in the config is written in `snake_case`; output columns
+are lowercased and hyphenated to `kebab-case` automatically on write.
 
 | Element | Where to change | What to edit |
 |---------|----------------|-------------|
 | Factor weights | `topsis_config.toml` → `[weights]` | `flood_hazard`, `exposure`, `vulnerability`, `government_response` |
 | Number of risk classes | `topsis_config.toml` → `classification.n_bins` | Integer (default `5`) |
-| District lookup | `assets/district_objectid.csv` | Replace with local district-to-ID mapping |
-| Indicator columns and aggregation | `topsis_config.toml` → `[indicators]` | Remove rows for columns absent in your data; add new rows for additional columns |
-| Output rounding | `topsis_config.toml` → `[rounding]` | Column name → decimal places |
-| Fiscal year logic (response score) | `govtresponse_config.toml` → `fiscal_year.start_month` | Month number when fiscal year starts (default `4` for April) |
+| District lookup | `<data-dir>/district_objectid.csv` | Replace with local district-to-ID mapping (fixed filename, written by `drsm generate-sample-data`) |
+| Indicator columns and aggregation | `topsis_config.toml` → `[indicators]` | Remove rows for columns absent in your data; add new rows (snake_case column name → aggregation function) |
+| Output rounding | `topsis_config.toml` → `[rounding]` | snake_case column name → decimal places |
+| Derived / renamed output columns | `topsis_config.toml` → `[derivations]`, `[renames]` | Optional display-only column derivations and renames (snake_case; geography-specific; omit if not needed) |
+| Fiscal year logic (response score) | `scores_config.toml` → `[govtresponse.fiscal_year].start_month` | Month number when fiscal year starts (default `1` for January; the India example uses `4` for April) |
 
 For a full step-by-step guide covering all factor scripts, see [getting_started.md](./getting_started.md).

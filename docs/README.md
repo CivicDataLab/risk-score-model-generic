@@ -10,11 +10,14 @@ The model takes a master dataset of spatial variables (one row per geographic un
 
 ```
 risk-score-model-generic/
-├── config/         ← configurable thresholds and variable lists
-├── data/           ← MASTER_VARIABLES.csv input + output CSVs
-├── scripts/        ← scoring computation scripts
+├── disaster_risk_score_model/  ← installable library: scoring modules, CLI,
+│                                  config loader, bundled config templates
+├── contrib/india/  ← India-specific tooling and the Assam reference example
 └── docs/           ← THIS DIRECTORY — methodology documentation
 ```
+
+> Configurable thresholds and variable lists live in the two TOML files that
+> `drsm init-config` scaffolds (`scores_config.toml`, `topsis_config.toml`).
 
 > **Source data documentation** (how raw datasets are ingested and transformed into `MASTER_VARIABLES.csv`) lives in the companion repository:
 > `flood-data-ecosystem-generic/docs/`
@@ -27,11 +30,11 @@ risk-score-model-generic/
 flowchart TD
     A([MASTER_VARIABLES.csv\nOne row per geographic unit per month\n45+ variables]) --> B
 
-    subgraph FactorScores["Factor Score Scripts"]
-        B[hazard.py] --> B1[factor_scores_l1_flood-hazard.csv\nflood-hazard class 1–5]
-        C[exposure.py] --> C1[factor_scores_l1_exposure.csv\nexposure class 1–5]
-        D[vulnerability.py] --> D1[factor_scores_l1_vulnerability.csv\nvulnerability class 1–5]
-        E[govtresponse.py] --> E1[factor_scores_l1_government-response.csv\ngovernment-response class 1–5]
+    subgraph FactorScores["Factor Score Steps"]
+        B[drsm hazard] --> B1[factor_scores_l1_flood-hazard.csv\nflood-hazard class 1–5]
+        C[drsm exposure] --> C1[factor_scores_l1_exposure.csv\nexposure class 1–5]
+        D[drsm vulnerability] --> D1[factor_scores_l1_vulnerability.csv\nvulnerability class 1–5]
+        E[drsm govtresponse] --> E1[factor_scores_l1_government-response.csv\ngovernment-response class 1–5]
     end
 
     A --> C
@@ -41,9 +44,9 @@ flowchart TD
     B1 & C1 & D1 & E1 --> F
 
     subgraph TOPSIS["TOPSIS Aggregation"]
-        F[topsis_riskscore.py\nWeighted TOPSIS per month] --> G[risk_score.csv\nBlock-level risk score]
+        F[drsm topsis\nWeighted TOPSIS per month] --> G[risk_score.csv\nBlock-level risk score]
         G --> H[District aggregation\n+ indicator rollup]
-        H --> I[risk_score_final_district.csv\nPlatform-ready output]
+        H --> I[risk_score_district.csv\nPlatform-ready output]
     end
 ```
 
@@ -51,13 +54,20 @@ flowchart TD
 
 ## Document Index
 
-| File | Score | Method | Script |
+Start here:
+
+- [getting_started.md](./getting_started.md) — end-to-end guide for adapting the model to a new geography
+- [dpg.md](./dpg.md) — mapping to the Digital Public Goods Standard
+
+Per-factor methodology:
+
+| File | Score | Method | Command |
 |------|-------|--------|--------|
-| [score_hazard.md](./score_hazard.md) | Flood Hazard | Log-normalise + z-score + quantile bins | `hazard.py` |
-| [score_exposure.md](./score_exposure.md) | Exposure | MinMax scale + std-dev bins | `exposure.py` |
-| [score_vulnerability.md](./score_vulnerability.md) | Vulnerability | DEA (CRS) efficiency + Jenks breaks | `vulnerability.py` |
-| [score_government_response.md](./score_government_response.md) | Government Response | FY cumulative sum + MinMax + std-dev bins | `govtresponse.py` |
-| [topsis_risk_score.md](./topsis_risk_score.md) | Composite Risk | Weighted TOPSIS + district rollup | `topsis_riskscore.py` |
+| [score_hazard.md](./score_hazard.md) | Flood Hazard | Log-normalise + z-score + quantile bins | `drsm hazard` |
+| [score_exposure.md](./score_exposure.md) | Exposure | MinMax scale + std-dev bins | `drsm exposure` |
+| [score_vulnerability.md](./score_vulnerability.md) | Vulnerability | DEA (CRS) efficiency + Jenks breaks | `drsm vulnerability` |
+| [score_government_response.md](./score_government_response.md) | Government Response | FY cumulative sum + MinMax + std-dev bins | `drsm govtresponse` |
+| [topsis_risk_score.md](./topsis_risk_score.md) | Composite Risk | Weighted TOPSIS + district rollup | `drsm topsis` |
 
 ---
 
@@ -71,12 +81,12 @@ All factor score scripts read from a single master CSV:
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `object_id` | Integer | Unique identifier for geographic unit (block/sub-district) |
-| `timeperiod` | String | Month in `YYYY_MM` format |
-| `district` | String | Parent administrative district name |
+| `unit_id` | String | Stable unique identifier for a geographic unit (any scheme; need not be numeric) |
+| `time_period` | String | Month in `YYYY-MM` format |
+| `parent_unit` | String | Parent unit name each row rolls up to |
 | *(factor-specific variables)* | Float | See individual score docs |
 
-**Geographic unit:** Any consistent administrative unit (block, sub-district, revenue circle, etc.) that has a unique `object_id` and can be mapped to a district for aggregation.
+**Geographic unit:** Any consistent administrative unit (block, sub-district, revenue circle, etc.) that has a unique `unit_id` and can be mapped to a `parent_unit` for aggregation.
 
 **Temporal unit:** Monthly. The model runs independently per month, so time series length is flexible.
 
@@ -90,5 +100,5 @@ All factor score scripts read from a single master CSV:
 | `factor_scores_l1_exposure.csv` | Master variables + `exposure` (1–5) |
 | `factor_scores_l1_vulnerability.csv` | Master variables + `vulnerability` (1–5) + `efficiency` |
 | `factor_scores_l1_government-response.csv` | Master variables + `government-response` (1–5) |
-| `risk_score.csv` | All factor scores + `TOPSIS_Score` + `risk-score` (1–5), block level |
-| `risk_score_final_district.csv` | Block rows + district summary rows; platform-ready for IDS-DRR |
+| `risk_score.csv` | All factor scores + `topsis-score` + `risk-score` (1–5), block level |
+| `risk_score_district.csv` | Block rows + district summary rows; platform-ready for IDS-DRR |

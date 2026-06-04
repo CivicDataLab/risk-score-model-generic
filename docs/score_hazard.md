@@ -1,9 +1,9 @@
 # Flood Hazard Score — Methodology
 
-**Script:** `scripts/hazard.py`
-**Config:** `config/hazard_config.toml`
-**Input:** `data/MASTER_VARIABLES.csv`
-**Output:** `data/factor_scores_l1_flood-hazard.csv`
+**Command:** `drsm hazard` (module `disaster_risk_score_model.hazard`)
+**Config:** `scores_config.toml` → `[hazard.*]`
+**Input:** `<data-dir>/MASTER_VARIABLES.csv`
+**Output:** `<data-dir>/factor_scores_l1_flood-hazard.csv`
 **Output columns added:** `flood-hazard` (integer 1–5), `flood-hazard-float` (continuous)
 
 ---
@@ -85,7 +85,7 @@ The float score is binned into 5 hazard classes using fixed quantile thresholds 
 | 4 (High) | > 80th and ≤ 95th percentile |
 | 5 (Very High) | > 95th percentile |
 
-> Thresholds are configurable in `hazard_config.py` (`QUANTILE_THRESHOLDS`).
+> Thresholds are configurable in `scores_config.toml` (`hazard.classification.quantile_thresholds`).
 
 ---
 
@@ -101,7 +101,7 @@ The following columns must be present in `MASTER_VARIABLES.csv`. All must be **n
 | `mean_rain` | Mean rainfall in the unit | mm or consistent unit |
 | `max_rain` | Maximum rainfall pixel value in the unit | mm or consistent unit |
 
-**Minimum viable configuration:** Any 2+ of these variables. Update `hazard_config.py → HAZARD_VARS` to match available columns.
+**Minimum viable configuration:** Any 2+ of these variables. Update `scores_config.toml → [hazard.inputs].variables` to match available columns.
 
 ### Adapting to Different Data Sources
 
@@ -117,7 +117,7 @@ The key constraint is that all variables must be spatially aggregated to the sam
 
 ## Configuration
 
-Edit `config/hazard_config.toml` to adapt the model. Shared path and column settings are in `base_config.toml`.
+Edit the `[hazard.*]` sections of `scores_config.toml` to adapt the model. The three structural columns (`time_period`, `unit_id`, `parent_unit`) use fixed names; I/O locations are set at run time via `--data-dir` / `--input-file`.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
