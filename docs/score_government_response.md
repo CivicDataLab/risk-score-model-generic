@@ -14,7 +14,7 @@ The Government Response score classifies each geographic unit for each month on 
 
 **Score interpretation:** 1 = Strong response (most spending), 5 = Weak response (least spending).
 
-This inversion reflects that government response **mitigates** risk — it is the only factor in the TOPSIS model where "more is better" for risk reduction.
+This inversion reflects that government response **mitigates** risk.
 
 ---
 
