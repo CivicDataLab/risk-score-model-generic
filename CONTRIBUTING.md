@@ -119,3 +119,6 @@ important for a machine-readable Digital Public Good.
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [GNU AGPL v3.0](LICENSE). Sample and derived data contributions are accepted under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+By submitting a contribution, you certify that you wrote it or otherwise have the right to submit it under the project's license (see the [Developer Certificate of Origin](https://developercertificate.org/)).
+
