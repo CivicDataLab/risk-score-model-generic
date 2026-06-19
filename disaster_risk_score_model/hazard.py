@@ -35,7 +35,8 @@ def calculate_hazard_scores(df, cfg):
 
     conditions = [df[HAZARD_FLOAT_COL] <= thresholds[0]]
     conditions.extend(
-        (df[HAZARD_FLOAT_COL] > thresholds[i]) & (df[HAZARD_FLOAT_COL] <= thresholds[i + 1]) for i in range(len(thresholds) - 1)
+        (df[HAZARD_FLOAT_COL] > thresholds[i]) & (df[HAZARD_FLOAT_COL] <= thresholds[i + 1])
+        for i in range(len(thresholds) - 1)
     )
     conditions.append(df[HAZARD_FLOAT_COL] > thresholds[-1])
 
