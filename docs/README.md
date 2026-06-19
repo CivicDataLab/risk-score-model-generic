@@ -57,7 +57,6 @@ flowchart TD
 Start here:
 
 - [getting_started.md](./getting_started.md) — end-to-end guide for adapting the model to a new geography
-- [dpg.md](./dpg.md) — mapping to the Digital Public Goods Standard
 
 Per-factor methodology:
 

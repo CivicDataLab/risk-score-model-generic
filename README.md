@@ -169,7 +169,6 @@ Adapting the model to a new geography is mostly a matter of editing these TOMLs 
 | [`score_vulnerability.md`](docs/score_vulnerability.md) | Vulnerability methodology (DEA) |
 | [`score_government_response.md`](docs/score_government_response.md) | Government Response methodology |
 | [`topsis_risk_score.md`](docs/topsis_risk_score.md) | TOPSIS composite score and final output |
-| [`dpg.md`](docs/dpg.md) | How the project maps to the Digital Public Goods Standard |
 | [`contrib/india/example/`](contrib/india/example/) | India (Assam) reference configuration and dataset |
 | [`contrib/india/maps/`](contrib/india/maps/) | admin-boundary download and transformation tooling for India |
 
